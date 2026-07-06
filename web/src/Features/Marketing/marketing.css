@@ -1,0 +1,118 @@
+.marketing-page {
+  background: var(--page-bg);
+  min-height: 100vh;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+.marketing-main {
+  flex: 1;
+  padding: 48px 0 72px;
+}
+
+.marketing-logo-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.marketing-hero {
+  margin-bottom: 40px;
+}
+
+.marketing-hero-title {
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--text-primary);
+}
+
+.marketing-hero-lead {
+  max-width: 640px;
+  line-height: 1.7;
+}
+
+.marketing-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.marketing-card:hover {
+  border-color: var(--card-border-hover);
+}
+
+.marketing-prose {
+  color: var(--text-secondary);
+  line-height: 1.75;
+  font-size: 15px;
+}
+
+.marketing-prose h2,
+.marketing-prose h3 {
+  color: var(--text-primary);
+  margin-top: 1.75em;
+  margin-bottom: 0.65em;
+  font-weight: 700;
+}
+
+.marketing-prose h2 {
+  font-size: 1.25rem;
+}
+
+.marketing-prose h3 {
+  font-size: 1.05rem;
+}
+
+.marketing-prose p {
+  margin-bottom: 1em;
+}
+
+.marketing-prose ul,
+.marketing-prose ol {
+  margin: 0 0 1em;
+  padding-left: 1.35em;
+}
+
+.marketing-prose li {
+  margin-bottom: 0.45em;
+}
+
+.marketing-prose a {
+  color: var(--brand);
+  text-decoration: none;
+}
+
+.marketing-prose a:hover {
+  text-decoration: underline;
+}
+
+.marketing-faq-item {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.marketing-contact-grid {
+  align-items: stretch;
+}
+
+.marketing-security-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--brand-glow);
+  border: 1px solid var(--brand-glow-strong);
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+[data-mantine-color-scheme='light'] .marketing-card {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}

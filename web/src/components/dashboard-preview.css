@@ -1,0 +1,208 @@
+/* Landing dashboard preview — fixed desktop layout at all viewport sizes */
+
+.landing-dashboard-preview {
+  position: relative;
+  width: 100%;
+}
+
+.landing-dashboard-preview-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--brand);
+  background: var(--brand-glow);
+  border: 1px solid var(--brand-glow-strong);
+  border-radius: 999px;
+  padding: 5px 10px;
+  pointer-events: none;
+}
+
+.landing-dashboard-preview-viewport {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid var(--card-border);
+  background: var(--page-bg);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+  user-select: none;
+  container-type: inline-size;
+  container-name: dashboard-preview;
+}
+
+.landing-dashboard-preview-scaler {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.dashboard-preview-shell {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  width: 100%;
+  min-height: 620px;
+  transform-origin: top center;
+}
+
+.dashboard-preview-sidebar {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--card-border);
+  padding: 16px 14px;
+}
+
+.dashboard-preview-brand {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+}
+
+.dashboard-preview-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.dashboard-preview-nav-item.is-active {
+  background: var(--nav-active-bg);
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.dashboard-preview-main {
+  padding: 16px 20px 20px;
+  min-width: 0;
+  background: var(--page-bg);
+}
+
+.dashboard-preview-header {
+  margin-bottom: 12px;
+  flex-wrap: nowrap !important;
+}
+
+.dashboard-preview-search {
+  width: 220px;
+  flex-shrink: 1;
+  min-width: 140px;
+}
+
+.dashboard-preview-select {
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.dashboard-preview-grid {
+  gap: 20px !important;
+}
+
+/* Force desktop dashboard layout inside preview (ignore global responsive rules) */
+.landing-dashboard-preview .dashboard-content-grid.has-aside {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 280px !important;
+  align-items: start !important;
+  gap: 20px !important;
+}
+
+.landing-dashboard-preview .dashboard-aside {
+  order: unset !important;
+  width: 280px;
+  flex-shrink: 0;
+}
+
+.landing-dashboard-preview .monitors-sidebar {
+  position: static !important;
+}
+
+.landing-dashboard-preview .monitor-row,
+.landing-dashboard-preview .monitor-row--preview {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto !important;
+  grid-template-rows: auto !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 14px 16px !important;
+}
+
+.landing-dashboard-preview .monitor-row > *,
+.landing-dashboard-preview .monitor-row--preview > * {
+  grid-column: auto !important;
+  grid-row: auto !important;
+  justify-self: unset !important;
+}
+
+.landing-dashboard-preview .monitor-row-uptime {
+  display: block !important;
+  min-width: 120px !important;
+}
+
+.landing-dashboard-preview .monitors-page-toolbar {
+  flex-wrap: nowrap !important;
+}
+
+.landing-hero-preview-wide {
+  width: 100%;
+  min-width: 0;
+  margin-top: 8px;
+}
+
+@media (min-width: 992px) {
+  .landing-hero-preview-wide {
+    margin-top: 16px;
+  }
+}
+
+/* Narrow viewports — scale entire desktop canvas uniformly (no internal reflow) */
+@container dashboard-preview (max-width: 899px) {
+  .landing-dashboard-preview-scaler {
+    --preview-scale: calc(100cqw / 1280);
+    height: calc(620px * var(--preview-scale));
+  }
+
+  .dashboard-preview-shell {
+    width: 1280px;
+    transform: scale(var(--preview-scale));
+    margin-bottom: calc(620px * var(--preview-scale) - 620px);
+  }
+}
+
+/* Wide enough — fluid width, desktop grid locked via rules above */
+@container dashboard-preview (min-width: 900px) {
+  .dashboard-preview-shell {
+    width: 100%;
+    transform: none;
+    margin-bottom: 0;
+  }
+}
+
+[data-mantine-color-scheme='light'] .landing-dashboard-preview-viewport {
+  box-shadow:
+    0 24px 48px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+[data-mantine-color-scheme='light'] .landing-dashboard-preview-badge {
+  background: #ecfdf5;
+  border-color: #99f6e4;
+  color: #0f766e;
+}

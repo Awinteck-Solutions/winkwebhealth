@@ -1,0 +1,7 @@
+# Local development: expose Redis to the host for `npm run dev` (api/worker/web outside Docker).
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up redis -d
+
+services:
+  redis:
+    ports:
+      - "6379:6379"

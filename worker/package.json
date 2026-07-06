@@ -1,0 +1,24 @@
+{
+  "name": "winkwebhealth-worker",
+  "version": "1.0.0",
+  "description": "WinkWebHealth monitoring worker",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "bullmq": "^5.34.8",
+    "dotenv": "^16.4.5",
+    "ioredis": "^5.4.2",
+    "mongoose": "^8.9.5",
+    "nodemailer": "^6.9.16"
+  },
+  "devDependencies": {
+    "@types/node": "^22.8.1",
+    "@types/nodemailer": "^6.4.16",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.6.3"
+  }
+}
