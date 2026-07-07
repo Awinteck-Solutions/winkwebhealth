@@ -54,7 +54,7 @@ EOF
   echo "  wrote $domain -> $upstream"
 }
 
-# Host port 4545 avoids conflicts with cPanel services on 4545/3001.
+# Host port 4545 (same inside container — set PORT=4545 in .env).
 resolve_api_upstream() {
   if [[ -n "$API_UPSTREAM" ]]; then
     echo "$API_UPSTREAM"
@@ -62,6 +62,7 @@ resolve_api_upstream() {
   fi
 
   local url container_ip
+
   if curl -sf --max-time 3 "$API_UPSTREAM_URL" >/dev/null 2>&1; then
     echo "==> API reachable at $API_UPSTREAM_URL" >&2
     echo "$API_UPSTREAM_URL"
@@ -70,19 +71,27 @@ resolve_api_upstream() {
 
   container_ip="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' winkwebhealth-api-1 2>/dev/null || true)"
   if [[ -n "$container_ip" ]]; then
-    url="http://${container_ip}:${API_HOST_PORT}/"
+    url="http://${container_ip}:${API_PORT}/"
     if curl -sf --max-time 3 "$url" >/dev/null 2>&1; then
-      echo "==> Host port ${API_HOST_PORT} unreachable; using container IP $url" >&2
+      echo "==> Host port ${API_PORT} unreachable; using container IP $url" >&2
       echo "    Re-run this script after 'docker compose down' if the API container is recreated." >&2
       echo "$url"
       return
     fi
   fi
 
-  echo "ERROR: API not reachable on ${API_UPSTREAM_URL} or container IP." >&2
+  if docker exec winkwebhealth-api-1 wget -qO- "http://127.0.0.1:${API_PORT}/" >/dev/null 2>&1 && [[ -n "$container_ip" ]]; then
+    url="http://${container_ip}:${API_PORT}/"
+    echo "==> API running in container; Apache will use $url" >&2
+    echo "$url"
+    return
+  fi
+
+  echo "ERROR: API not reachable." >&2
+  echo "  Ensure .env has PORT=${API_PORT}" >&2
   echo "  docker compose ps" >&2
-  echo "  docker compose logs api --tail=20" >&2
-  echo "  docker exec winkwebhealth-api-1 wget -qO- http://127.0.0.1:${API_HOST_PORT}/" >&2
+  echo "  docker compose logs api --tail=30" >&2
+  echo "  docker exec winkwebhealth-api-1 wget -qO- http://127.0.0.1:${API_PORT}/" >&2
   exit 1
 }
 

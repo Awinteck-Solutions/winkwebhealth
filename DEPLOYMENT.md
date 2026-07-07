@@ -53,6 +53,7 @@ Required `.env` values:
 
 | Variable | Example |
 |----------|---------|
+| `PORT` | `4545` |
 | `WEB_URL` | `https://winkwebhealth.com` |
 | `VITE_API_URL` | `https://api.winkwebhealth.com` |
 | `DB_URL` | MongoDB Atlas connection string |
