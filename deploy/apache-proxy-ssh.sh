@@ -39,15 +39,18 @@ write_proxy_conf() {
   local domain=$1 upstream=$2
   local ssl_dir="/etc/apache2/conf.d/userdata/ssl/2_4/${CPANEL_USER}/${domain}"
   local std_dir="/etc/apache2/conf.d/userdata/std/2_4/${CPANEL_USER}/${domain}"
-  local conf='ProxyPreserveHost On
-RequestHeader set X-Forwarded-Proto "https"
-RequestHeader set X-Forwarded-For "%{REMOTE_ADDR}s"
-ProxyPass / '"${upstream}"'
-ProxyPassReverse / '"${upstream}"'
+  local conf_file
 
   mkdir -p "$ssl_dir" "$std_dir"
-  printf '%s\n' "$conf" > "${ssl_dir}/winkwebhealth-proxy.conf"
-  printf '%s\n' "$conf" > "${std_dir}/winkwebhealth-proxy.conf"
+  for conf_file in "${ssl_dir}/winkwebhealth-proxy.conf" "${std_dir}/winkwebhealth-proxy.conf"; do
+    cat > "$conf_file" <<EOF
+ProxyPreserveHost On
+RequestHeader set X-Forwarded-Proto "https"
+RequestHeader set X-Forwarded-For "%{REMOTE_ADDR}s"
+ProxyPass / ${upstream}
+ProxyPassReverse / ${upstream}
+EOF
+  done
   echo "  wrote $domain -> $upstream"
 }
 
