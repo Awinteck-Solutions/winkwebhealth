@@ -23,12 +23,11 @@ services:
     env_file:
       - .env
     environment:
-      PORT: 3000
+      PORT: 4545
       NODE_ENV: production
       REDIS_URL: redis://redis:6379
     ports:
-      # Host 3001 — port 3000 docker-proxy is unreliable on cPanel VPS
-      - "127.0.0.1:3001:3000"
+      - "127.0.0.1:4545:4545"
     depends_on:
       redis:
         condition: service_healthy
@@ -61,7 +60,7 @@ services:
       context: ./web
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:4545}
     restart: unless-stopped
     ports:
       - "127.0.0.1:8080:80"

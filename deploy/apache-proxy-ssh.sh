@@ -15,7 +15,7 @@ CPANEL_USER="${CPANEL_USER:-awinxcxu}"
 WEB_DOMAIN="${WEB_DOMAIN:-winkwebhealth.com}"
 API_DOMAIN="${API_DOMAIN:-api.winkwebhealth.com}"
 WEB_UPSTREAM="${WEB_UPSTREAM:-$WEB_UPSTREAM_URL}"
-API_UPSTREAM="${API_UPSTREAM:-$API_UPSTREAM_URL}"
+API_UPSTREAM="${API_UPSTREAM:-}"
 
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "Run with sudo: sudo $0"
@@ -54,6 +54,40 @@ EOF
   echo "  wrote $domain -> $upstream"
 }
 
+# Host port 4545 avoids conflicts with cPanel services on 4545/3001.
+resolve_api_upstream() {
+  if [[ -n "$API_UPSTREAM" ]]; then
+    echo "$API_UPSTREAM"
+    return
+  fi
+
+  local url container_ip
+  if curl -sf --max-time 3 "$API_UPSTREAM_URL" >/dev/null 2>&1; then
+    echo "==> API reachable at $API_UPSTREAM_URL" >&2
+    echo "$API_UPSTREAM_URL"
+    return
+  fi
+
+  container_ip="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' winkwebhealth-api-1 2>/dev/null || true)"
+  if [[ -n "$container_ip" ]]; then
+    url="http://${container_ip}:${API_HOST_PORT}/"
+    if curl -sf --max-time 3 "$url" >/dev/null 2>&1; then
+      echo "==> Host port ${API_HOST_PORT} unreachable; using container IP $url" >&2
+      echo "    Re-run this script after 'docker compose down' if the API container is recreated." >&2
+      echo "$url"
+      return
+    fi
+  fi
+
+  echo "ERROR: API not reachable on ${API_UPSTREAM_URL} or container IP." >&2
+  echo "  docker compose ps" >&2
+  echo "  docker compose logs api --tail=20" >&2
+  echo "  docker exec winkwebhealth-api-1 wget -qO- http://127.0.0.1:${API_HOST_PORT}/" >&2
+  exit 1
+}
+
+API_UPSTREAM="$(resolve_api_upstream)"
+
 echo "==> Apache proxy for cPanel user: $CPANEL_USER"
 write_proxy_conf "$WEB_DOMAIN" "$WEB_UPSTREAM"
 write_proxy_conf "$API_DOMAIN" "$API_UPSTREAM"
@@ -63,7 +97,8 @@ echo "==> Rebuilding Apache config..."
 /scripts/restartsrv_httpd
 
 echo ""
-echo "Done. Test:"
-echo "  curl -s ${API_UPSTREAM_URL}"
+echo "Done. API upstream: $API_UPSTREAM"
+echo "Test:"
+echo "  curl -s $API_UPSTREAM"
 echo "  curl -sI https://${WEB_DOMAIN}/ | head -5"
 echo "  curl -s https://${API_DOMAIN}/"

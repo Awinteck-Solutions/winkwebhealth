@@ -29,7 +29,7 @@ cd api-mongoose
 npm install
 npm run dev
 ```
-Runs on http://localhost:3000
+Runs on http://localhost:4545
 
 ### 4. Worker
 ```bash

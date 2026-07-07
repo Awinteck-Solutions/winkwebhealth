@@ -10,7 +10,7 @@ Internet
    ▼
 Apache (cPanel, SSL on 443)
    ├── yourdomain.com      ──proxy──► 127.0.0.1:8080  (web container / nginx)
-   └── api.yourdomain.com  ──proxy──► 127.0.0.1:3001  (api container)
+   └── api.yourdomain.com  ──proxy──► 127.0.0.1:4545  (api container)
 
 Docker network (internal)
    ├── redis
@@ -79,7 +79,7 @@ Verify:
 ```bash
 docker compose ps
 docker compose logs -f worker   # should show smtpReady: true, worker running
-curl -s http://127.0.0.1:3001/  # API welcome JSON
+curl -s http://127.0.0.1:4545/  # API welcome JSON
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/  # 200
 ```
 
@@ -134,7 +134,7 @@ docker compose up -d web
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up redis -d
-cd api-mongoose && npm run dev    # http://localhost:3000
+cd api-mongoose && npm run dev    # http://localhost:4545
 cd worker && npm run dev
 cd web && npm run dev             # http://localhost:8080
 ```
@@ -145,11 +145,11 @@ cd web && npm run dev             # http://localhost:8080
 |-------|-----|
 | BullMQ lock errors | Ensure only **one** worker container: `docker compose ps worker` |
 | No email alerts | Check `docker compose logs worker` for `smtpReady: false` |
-| API 502 / connection reset on :3000 | API uses host port **3001** (see docker-compose); re-run `sudo ./deploy/apache-proxy-ssh.sh` |
+| API 502 / connection reset | API uses host port **4545** (see docker-compose); re-run `sudo ./deploy/apache-proxy-ssh.sh` |
 | Web shows wrong API | Rebuild web with correct `VITE_API_URL` in `.env` |
 | MongoDB timeouts | Allowlist VPS public IP in Atlas Network Access |
 
 ## Firewall
 
 Allow: **80**, **443**  
-Block public access to: **3001**, **6379**, **8080** (Docker maps them to 127.0.0.1 only)
+Block public access to: **4545**, **6379**, **8080** (Docker maps them to 127.0.0.1 only)

@@ -38,7 +38,7 @@ app.get('/', (req: Request, res: Response) => {
 
 app.use(errorHandler)
 
-const port = Number(process.env.PORT) || 3000;
+const port = Number(process.env.PORT) || 4545;
 
 connectToDatabase().then(() => { 
     app.listen(port, '0.0.0.0', ()=> console.log(`Server running on port ${port}`))
