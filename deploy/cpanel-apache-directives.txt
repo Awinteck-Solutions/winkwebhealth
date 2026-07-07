@@ -1,7 +1,6 @@
 # cPanel → Domains → Additional Apache directives
 #
-# Web: proxy to docker-proxy on localhost (works reliably on cPanel).
-# API: proxy to container bridge IP — do NOT use 127.0.0.1:3000 (broken docker-proxy).
+# Paste ONLY the block for each domain. SSL via AutoSSL must be enabled first.
 
 # --- winkwebhealth.com (+ www) ---
 ProxyPreserveHost On
@@ -14,10 +13,9 @@ ProxyPassReverse / http://127.0.0.1:8080/
 ProxyPreserveHost On
 RequestHeader set X-Forwarded-Proto "https"
 RequestHeader set X-Forwarded-For "%{REMOTE_ADDR}s"
-ProxyPass /.well-known !
-ProxyPass / http://172.28.10.10:3000/
-ProxyPassReverse / http://172.28.10.10:3000/
+ProxyPass / http://127.0.0.1:3001/
+ProxyPassReverse / http://127.0.0.1:3001/
 
 # Verify on VPS:
-#   curl -s http://172.28.10.10:3000/
+#   curl -s http://127.0.0.1:3001/
 #   curl -s https://api.winkwebhealth.com/

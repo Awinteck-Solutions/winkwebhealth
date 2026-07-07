@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # Configure Apache reverse proxy on cPanel/WHM via SSH (requires root/sudo).
 #
-# API traffic goes to the container bridge IP (not docker-proxy on localhost).
-# This avoids broken 127.0.0.1:3000 port forwarding on cPanel VPS.
-#
 # Usage on VPS:
 #   cd ~/winkwebhealth
 #   sudo ./deploy/apache-proxy-ssh.sh
@@ -38,31 +35,13 @@ for mod in proxy proxy_http headers; do
   fi
 done
 
-write_web_proxy_conf() {
+write_proxy_conf() {
   local domain=$1 upstream=$2
   local ssl_dir="/etc/apache2/conf.d/userdata/ssl/2_4/${CPANEL_USER}/${domain}"
   local std_dir="/etc/apache2/conf.d/userdata/std/2_4/${CPANEL_USER}/${domain}"
   local conf='ProxyPreserveHost On
 RequestHeader set X-Forwarded-Proto "https"
 RequestHeader set X-Forwarded-For "%{REMOTE_ADDR}s"
-ProxyPass / '"${upstream}"'
-ProxyPassReverse / '"${upstream}"'
-
-  mkdir -p "$ssl_dir" "$std_dir"
-  printf '%s\n' "$conf" > "${ssl_dir}/winkwebhealth-proxy.conf"
-  printf '%s\n' "$conf" > "${std_dir}/winkwebhealth-proxy.conf"
-  echo "  wrote $domain -> $upstream"
-}
-
-write_api_proxy_conf() {
-  local domain=$1 upstream=$2
-  local ssl_dir="/etc/apache2/conf.d/userdata/ssl/2_4/${CPANEL_USER}/${domain}"
-  local std_dir="/etc/apache2/conf.d/userdata/std/2_4/${CPANEL_USER}/${domain}"
-  local conf='ProxyPreserveHost On
-RequestHeader set X-Forwarded-Proto "https"
-RequestHeader set X-Forwarded-For "%{REMOTE_ADDR}s"
-
-ProxyPass /.well-known !
 ProxyPass / '"${upstream}"'
 ProxyPassReverse / '"${upstream}"'
 
@@ -73,8 +52,8 @@ ProxyPassReverse / '"${upstream}"'
 }
 
 echo "==> Apache proxy for cPanel user: $CPANEL_USER"
-write_web_proxy_conf "$WEB_DOMAIN" "$WEB_UPSTREAM"
-write_api_proxy_conf "$API_DOMAIN" "$API_UPSTREAM"
+write_proxy_conf "$WEB_DOMAIN" "$WEB_UPSTREAM"
+write_proxy_conf "$API_DOMAIN" "$API_UPSTREAM"
 
 echo "==> Rebuilding Apache config..."
 /scripts/rebuildhttpdconf
@@ -82,6 +61,6 @@ echo "==> Rebuilding Apache config..."
 
 echo ""
 echo "Done. Test:"
-echo "  curl -s http://${API_CONTAINER_IP}:${API_CONTAINER_PORT}/"
+echo "  curl -s ${API_UPSTREAM_URL}"
 echo "  curl -sI https://${WEB_DOMAIN}/ | head -5"
 echo "  curl -s https://${API_DOMAIN}/"
