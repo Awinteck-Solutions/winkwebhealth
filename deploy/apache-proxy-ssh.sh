@@ -15,7 +15,7 @@ CPANEL_USER="${CPANEL_USER:-awinxcxu}"
 WEB_DOMAIN="${WEB_DOMAIN:-winkwebhealth.com}"
 API_DOMAIN="${API_DOMAIN:-api.winkwebhealth.com}"
 WEB_UPSTREAM="${WEB_UPSTREAM:-$WEB_UPSTREAM_URL}"
-API_UPSTREAM="${API_UPSTREAM:-}"
+API_UPSTREAM="${API_UPSTREAM:-$API_UPSTREAM_URL}"
 
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "Run with sudo: sudo $0"
@@ -54,48 +54,17 @@ EOF
   echo "  wrote $domain -> $upstream"
 }
 
-# Host port 4545 (same inside container — set PORT=4545 in .env).
-resolve_api_upstream() {
-  if [[ -n "$API_UPSTREAM" ]]; then
-    echo "$API_UPSTREAM"
-    return
+if ! curl -sf --max-time 3 "$API_UPSTREAM" >/dev/null 2>&1; then
+  echo "WARNING: API not reachable at $API_UPSTREAM yet." >&2
+  echo "  Ensure .env has PORT=${API_PORT} and run: docker compose up -d --build api" >&2
+fi
+
+if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce)" == "Enforcing" ]]; then
+  if ! getsebool httpd_can_network_connect 2>/dev/null | grep -q ' on$'; then
+    echo "==> Enabling SELinux httpd_can_network_connect for Apache -> Docker proxy"
+    setsebool -P httpd_can_network_connect 1
   fi
-
-  local url container_ip
-
-  if curl -sf --max-time 3 "$API_UPSTREAM_URL" >/dev/null 2>&1; then
-    echo "==> API reachable at $API_UPSTREAM_URL" >&2
-    echo "$API_UPSTREAM_URL"
-    return
-  fi
-
-  container_ip="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' winkwebhealth-api-1 2>/dev/null || true)"
-  if [[ -n "$container_ip" ]]; then
-    url="http://${container_ip}:${API_PORT}/"
-    if curl -sf --max-time 3 "$url" >/dev/null 2>&1; then
-      echo "==> Host port ${API_PORT} unreachable; using container IP $url" >&2
-      echo "    Re-run this script after 'docker compose down' if the API container is recreated." >&2
-      echo "$url"
-      return
-    fi
-  fi
-
-  if docker exec winkwebhealth-api-1 wget -qO- "http://127.0.0.1:${API_PORT}/" >/dev/null 2>&1 && [[ -n "$container_ip" ]]; then
-    url="http://${container_ip}:${API_PORT}/"
-    echo "==> API running in container; Apache will use $url" >&2
-    echo "$url"
-    return
-  fi
-
-  echo "ERROR: API not reachable." >&2
-  echo "  Ensure .env has PORT=${API_PORT}" >&2
-  echo "  docker compose ps" >&2
-  echo "  docker compose logs api --tail=30" >&2
-  echo "  docker exec winkwebhealth-api-1 wget -qO- http://127.0.0.1:${API_PORT}/" >&2
-  exit 1
-}
-
-API_UPSTREAM="$(resolve_api_upstream)"
+fi
 
 echo "==> Apache proxy for cPanel user: $CPANEL_USER"
 write_proxy_conf "$WEB_DOMAIN" "$WEB_UPSTREAM"

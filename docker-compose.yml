@@ -7,6 +7,8 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
     networks:
       - wink
     healthcheck:
@@ -20,20 +22,19 @@ services:
       context: ./api-mongoose
       dockerfile: Dockerfile
     restart: unless-stopped
+    # Host network: API listens on 127.0.0.1:4545 directly (bypasses broken docker-proxy on cPanel).
+    network_mode: host
     env_file:
       - .env
     environment:
       NODE_ENV: production
-      REDIS_URL: redis://redis:6379
-    ports:
-      - "127.0.0.1:4545:4545"
+      BIND_HOST: 127.0.0.1
+      REDIS_URL: redis://127.0.0.1:6379
     depends_on:
       redis:
         condition: service_healthy
     volumes:
       - api_uploads:/app/uploads
-    networks:
-      - wink
 
   worker:
     build:

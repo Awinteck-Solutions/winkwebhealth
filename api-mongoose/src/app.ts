@@ -39,9 +39,10 @@ app.get('/', (req: Request, res: Response) => {
 app.use(errorHandler)
 
 const port = Number(process.env.PORT) || 4545;
+const host = process.env.BIND_HOST || "0.0.0.0";
 
 connectToDatabase().then(() => { 
-    app.listen(port, '0.0.0.0', ()=> console.log(`Server running on port ${port}`))
+    app.listen(port, host, ()=> console.log(`Server running on ${host}:${port}`))
 }).catch((error) => {
     console.log('error :>> ', error);
 })

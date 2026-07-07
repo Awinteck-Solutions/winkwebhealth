@@ -10,12 +10,12 @@ Internet
    ▼
 Apache (cPanel, SSL on 443)
    ├── yourdomain.com      ──proxy──► 127.0.0.1:8080  (web container / nginx)
-   └── api.yourdomain.com  ──proxy──► 127.0.0.1:4545  (api container)
+   └── api.yourdomain.com  ──proxy──► 127.0.0.1:4545  (api uses host network)
 
 Docker network (internal)
-   ├── redis
-   ├── api
-   ├── worker  (single instance only)
+   ├── redis  (also published 127.0.0.1:6379 for host-network api)
+   ├── api    (host network — listens 127.0.0.1:4545 on VPS)
+   ├── worker
    └── web
 
 MongoDB Atlas (external)
@@ -146,7 +146,7 @@ cd web && npm run dev             # http://localhost:8080
 |-------|-----|
 | BullMQ lock errors | Ensure only **one** worker container: `docker compose ps worker` |
 | No email alerts | Check `docker compose logs worker` for `smtpReady: false` |
-| API 502 / connection reset | API uses host port **4545** (see docker-compose); re-run `sudo ./deploy/apache-proxy-ssh.sh` |
+| API 502 / 503 from Apache | Re-run `sudo ./deploy/apache-proxy-ssh.sh`; API uses **host network** on `127.0.0.1:4545` |
 | Web shows wrong API | Rebuild web with correct `VITE_API_URL` in `.env` |
 | MongoDB timeouts | Allowlist VPS public IP in Atlas Network Access |
 
