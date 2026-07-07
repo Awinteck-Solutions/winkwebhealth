@@ -1,0 +1,23 @@
+# cPanel → Domains → winkwebhealth.com → Domains / Redirects → Manage
+# → "Additional Apache directives" (or "Include Editor" in WHM)
+#
+# Paste ONLY the block for each domain. SSL via AutoSSL must be enabled first.
+
+# --- winkwebhealth.com (+ www) ---
+ProxyPreserveHost On
+RequestHeader set X-Forwarded-Proto "https"
+RequestHeader set X-Forwarded-For "%{REMOTE_ADDR}s"
+ProxyPass / http://127.0.0.1:8080/
+ProxyPassReverse / http://127.0.0.1:8080/
+
+# --- api.winkwebhealth.com (separate subdomain in cPanel) ---
+ProxyPreserveHost On
+RequestHeader set X-Forwarded-Proto "https"
+RequestHeader set X-Forwarded-For "%{REMOTE_ADDR}s"
+ProxyPass / http://127.0.0.1:3000/
+ProxyPassReverse / http://127.0.0.1:3000/
+
+# If you get 503/502: ensure mod_proxy is enabled in WHM (EasyApache 4).
+# Test on VPS before Apache:
+#   curl -s http://127.0.0.1:3000/
+#   curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/opt/winkwebhealth}"
-REPO_URL="${REPO_URL:-}"  # set your git remote
+REPO_URL="${REPO_URL:-https://github.com/Awinteck-Solutions/winkwebhealth.git}"
 
 echo "==> WinkWebHealth VPS bootstrap"
 
