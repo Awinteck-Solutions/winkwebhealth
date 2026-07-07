@@ -10,13 +10,13 @@ Internet
    ▼
 Apache (cPanel, SSL on 443)
    ├── yourdomain.com      ──proxy──► 127.0.0.1:8080  (web container / nginx)
-   └── api.yourdomain.com  ──proxy──► 127.0.0.1:3000  (api container)
+   └── api.yourdomain.com  ──proxy──► 172.28.10.10:3000  (api container bridge IP)
 
-Docker network (internal)
+Docker network `wink` (172.28.10.0/24)
    ├── redis
-   ├── api
-   ├── worker  (single instance only)
-   └── web
+   ├── api      (fixed IP 172.28.10.10 — no host port publish)
+   ├── worker   (single instance only)
+   └── web      (published 127.0.0.1:8080 only)
 
 MongoDB Atlas (external)
 cPanel mail server (SMTP for alerts)
@@ -79,28 +79,21 @@ Verify:
 ```bash
 docker compose ps
 docker compose logs -f worker   # should show smtpReady: true, worker running
-curl -s http://127.0.0.1:3000/  # API welcome JSON
+curl -s http://172.28.10.10:3000/  # API welcome JSON (bridge IP, not localhost)
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/  # 200
 ```
 
 ## 4. Apache reverse proxy (cPanel)
 
-See `deploy/apache-vhost.example.conf`.
-
-**Option A — cPanel per domain:** Domain → Domains → your domain → **Redirects/Directives** → add ProxyPass rules (requires `mod_proxy` enabled in WHM).
-
-**Option B — WHM Include Editor:** Paste adapted vhost blocks for main site and API subdomain.
-
-Enable modules if needed:
+**Recommended:** run the setup script as root:
 
 ```bash
-# WHM → EasyApache 4 or:
-httpd -M | grep proxy
+sudo ./deploy/apache-proxy-ssh.sh
 ```
 
-Required: `proxy`, `proxy_http`, `ssl`, `rewrite`
+This proxies the web app via `127.0.0.1:8080` and the API via the container bridge IP **`172.28.10.10:3000`**. The API is **not** published on localhost — `docker-proxy` on port 3000 is unreliable on cPanel VPS.
 
-**Important:** Docker binds to `127.0.0.1` only — not exposed to the public internet directly.
+See also `deploy/apache-vhost.example.conf` and `deploy/cpanel-apache-directives.txt`.
 
 ## 5. SSL
 
@@ -150,11 +143,12 @@ cd web && npm run dev             # http://localhost:8080
 |-------|-----|
 | BullMQ lock errors | Ensure only **one** worker container: `docker compose ps worker` |
 | No email alerts | Check `docker compose logs worker` for `smtpReady: false` |
-| API 502 from Apache | `docker compose ps` — api must be up; test `curl localhost:3000` |
+| API 502 / connection reset | Re-run `sudo ./deploy/apache-proxy-ssh.sh` — API must proxy to **172.28.10.10:3000**, not localhost:3000 |
+| SELinux blocks Apache → Docker | `sudo setsebool -P httpd_can_network_connect 1` |
 | Web shows wrong API | Rebuild web with correct `VITE_API_URL` in `.env` |
 | MongoDB timeouts | Allowlist VPS public IP in Atlas Network Access |
 
 ## Firewall
 
 Allow: **80**, **443**  
-Block public access to: **3000**, **6379**, **8080** (Docker maps them to 127.0.0.1 only)
+Block public access to: **8080** (web only; bound to 127.0.0.1). API has no public host port.

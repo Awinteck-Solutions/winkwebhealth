@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# shellcheck source=config.sh
+source "$ROOT/deploy/config.sh"
+
 if [[ ! -f .env ]]; then
   echo "Missing .env — copy .env.docker.example to .env and fill in values."
   exit 1
@@ -18,7 +21,11 @@ docker compose ps
 
 echo ""
 echo "Endpoints (via Apache proxy in production):"
-echo "  Web:  https://winkwebhealth.com     -> 127.0.0.1:8080"
-echo "  API:  https://api.winkwebhealth.com -> 127.0.0.1:3000"
+echo "  Web:  https://winkwebhealth.com     -> ${WEB_UPSTREAM_URL}"
+echo "  API:  https://api.winkwebhealth.com -> ${API_UPSTREAM_URL}"
 echo ""
+echo "Verify API (bridge IP, not localhost):"
+echo "  curl -s ${API_UPSTREAM_URL}"
+echo ""
+echo "Configure Apache: sudo ./deploy/apache-proxy-ssh.sh"
 echo "Logs: docker compose logs -f api worker web"

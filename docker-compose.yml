@@ -26,15 +26,28 @@ services:
       PORT: 3000
       NODE_ENV: production
       REDIS_URL: redis://redis:6379
-    ports:
-      - "127.0.0.1:3000:3000"
+    # No host port publish — Apache proxies to the container bridge IP directly.
+    # docker-proxy on 127.0.0.1:3000 is unreliable on cPanel VPS (connection reset).
     depends_on:
       redis:
         condition: service_healthy
     volumes:
       - api_uploads:/app/uploads
     networks:
-      - wink
+      wink:
+        ipv4_address: 172.28.10.10
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:3000/',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   worker:
     build:
@@ -74,3 +87,6 @@ volumes:
 networks:
   wink:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.10.0/24

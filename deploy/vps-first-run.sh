@@ -2,6 +2,10 @@
 # Run on the VPS (SSH session). Clones repo, checks .env, starts Docker stack.
 set -euo pipefail
 
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=config.sh
+source "$ROOT/deploy/config.sh"
+
 REPO_URL="${REPO_URL:-https://github.com/Awinteck-Solutions/winkwebhealth.git}"
 APP_DIR="${APP_DIR:-}"
 
@@ -55,7 +59,7 @@ chmod +x deploy/*.sh
 
 echo ""
 echo "==> Local checks on VPS"
-curl -sf http://127.0.0.1:3000/ | head -c 120 && echo ""
+curl -sf "${API_UPSTREAM_URL}" | head -c 120 && echo ""
 curl -s -o /dev/null -w "Web HTTP: %{http_code}\n" http://127.0.0.1:8080/
 
 PUBLIC_IP="$(curl -sf https://ifconfig.me 2>/dev/null || curl -sf https://api.ipify.org 2>/dev/null || true)"
@@ -69,4 +73,4 @@ echo ""
 echo "==> Next: Apache proxy (cPanel)"
 echo "See deploy/cpanel-apache-directives.txt"
 echo "  winkwebhealth.com     -> http://127.0.0.1:8080"
-echo "  api.winkwebhealth.com -> http://127.0.0.1:3000"
+echo "  api.winkwebhealth.com -> ${API_UPSTREAM_URL}"

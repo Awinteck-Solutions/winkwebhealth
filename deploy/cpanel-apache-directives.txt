@@ -1,7 +1,7 @@
-# cPanel → Domains → winkwebhealth.com → Domains / Redirects → Manage
-# → "Additional Apache directives" (or "Include Editor" in WHM)
+# cPanel → Domains → Additional Apache directives
 #
-# Paste ONLY the block for each domain. SSL via AutoSSL must be enabled first.
+# Web: proxy to docker-proxy on localhost (works reliably on cPanel).
+# API: proxy to container bridge IP — do NOT use 127.0.0.1:3000 (broken docker-proxy).
 
 # --- winkwebhealth.com (+ www) ---
 ProxyPreserveHost On
@@ -10,14 +10,14 @@ RequestHeader set X-Forwarded-For "%{REMOTE_ADDR}s"
 ProxyPass / http://127.0.0.1:8080/
 ProxyPassReverse / http://127.0.0.1:8080/
 
-# --- api.winkwebhealth.com (separate subdomain in cPanel) ---
+# --- api.winkwebhealth.com ---
 ProxyPreserveHost On
 RequestHeader set X-Forwarded-Proto "https"
 RequestHeader set X-Forwarded-For "%{REMOTE_ADDR}s"
-ProxyPass / http://127.0.0.1:3000/
-ProxyPassReverse / http://127.0.0.1:3000/
+ProxyPass /.well-known !
+ProxyPass / http://172.28.10.10:3000/
+ProxyPassReverse / http://172.28.10.10:3000/
 
-# If you get 503/502: ensure mod_proxy is enabled in WHM (EasyApache 4).
-# Test on VPS before Apache:
-#   curl -s http://127.0.0.1:3000/
-#   curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/
+# Verify on VPS:
+#   curl -s http://172.28.10.10:3000/
+#   curl -s https://api.winkwebhealth.com/

@@ -23,7 +23,6 @@ app.use("/billing", billingWebhookRoutes);
 
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({extended: true}))
-app.use(errorHandler)
 app.use(Router)
 
 
@@ -37,10 +36,12 @@ app.get('/', (req: Request, res: Response) => {
     })
 })
 
+app.use(errorHandler)
 
+const port = Number(process.env.PORT) || 3000;
 
 connectToDatabase().then(() => { 
-    app.listen(process.env.PORT, ()=> console.log('Server running on port 3000'))
+    app.listen(port, '0.0.0.0', ()=> console.log(`Server running on port ${port}`))
 }).catch((error) => {
     console.log('error :>> ', error);
 })

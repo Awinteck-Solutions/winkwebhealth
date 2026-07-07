@@ -2,6 +2,10 @@
 # Run ON THE VPS as root or deploy user (after git clone).
 set -euo pipefail
 
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=config.sh
+source "$ROOT/deploy/config.sh"
+
 APP_DIR="${APP_DIR:-/opt/winkwebhealth}"
 REPO_URL="${REPO_URL:-https://github.com/Awinteck-Solutions/winkwebhealth.git}"
 
@@ -35,10 +39,10 @@ docker compose up -d --build
 echo ""
 docker compose ps
 echo ""
-echo "Next: configure Apache proxy (deploy/apache-vhost.example.conf)"
+echo "Next: sudo ./deploy/apache-proxy-ssh.sh"
 echo "  winkwebhealth.com     -> 127.0.0.1:8080"
-echo "  api.winkwebhealth.com -> 127.0.0.1:3000"
+echo "  api.winkwebhealth.com -> ${API_UPSTREAM_URL}"
 echo ""
 echo "Test locally on VPS:"
-echo "  curl -s http://127.0.0.1:3000/"
+echo "  curl -s ${API_UPSTREAM_URL}"
 echo "  curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/"
