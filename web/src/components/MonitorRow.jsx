@@ -19,8 +19,8 @@ function statusLabel(monitor) {
   return `${monitor.type} · ${label}`;
 }
 
-export function MonitorRow({ monitor, checks = [], onPause, onDelete, readOnly = !canWrite(), preview = false }) {
-  const uptime = monitor.uptimePercent ?? (monitor.currentStatus === 'UP' ? 100 : monitor.currentStatus === 'DOWN' ? 0 : null);
+export function MonitorRow({ monitor, checks = [], summaryLoading = false, onPause, onDelete, readOnly = !canWrite(), preview = false }) {
+  const uptime = monitor.uptimePercent ?? (summaryLoading ? null : (monitor.currentStatus === 'UP' ? 100 : monitor.currentStatus === 'DOWN' ? 0 : null));
 
   const Row = preview ? Box : Link;
   const rowClassName = preview ? 'monitor-row monitor-row--preview' : 'monitor-row';
@@ -68,7 +68,7 @@ export function MonitorRow({ monitor, checks = [], onPause, onDelete, readOnly =
           color: uptimeMetricColor(uptime),
         }}
       >
-        {uptime !== null ? `${uptime}%` : '—'}
+        {uptime !== null ? `${uptime}%` : summaryLoading ? '…' : '—'}
       </Text>
 
       {!readOnly && !preview && (

@@ -1,16 +1,22 @@
+import { useEffect, useState } from 'react';
 import {
   AppShell, NavLink, Group, Text, Button, Stack, Avatar, Box, Divider, Burger, Badge,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  IconActivity, IconBell, IconWorld, IconCreditCard, IconLogout, IconHeartbeat, IconUsers,
+  IconActivity, IconBell, IconWorld, IconCreditCard, IconLogout, IconUsers, IconShieldLock,
 } from '@tabler/icons-react';
 import { STATUS } from '../constants/colors';
 import { logout, getAuthUser } from '../utils/auth';
 import { canManageBilling, canManageTeam, isViewer } from '../utils/permissions';
 import { ThemeToggle } from './ThemeToggle';
 import { ViewerBanner } from './ViewerBanner';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
+import { BrandLogo } from './BrandLogo';
+import apiClient from '../utils/apiClient';
+import { billingEndpoints } from '../Features/Monitors/monitors.endpoints';
+import { platformAdminEndpoints } from '../Features/PlatformAdmin/platform-admin.endpoints';
 
 const allNavItems = [
   { label: 'Monitoring', path: '/dashboard/monitors', icon: IconActivity, show: () => true },
@@ -21,11 +27,7 @@ const allNavItems = [
 ];
 
 function BrandMark({ size = 28 }) {
-  return (
-    <Box className="dashboard-sidebar-brand" style={{ width: size, height: size, borderRadius: size * 0.28 }}>
-      <IconHeartbeat size={size * 0.55} color="#fff" stroke={2.5} />
-    </Box>
-  );
+  return <BrandLogo size={size} linkTo="/dashboard/monitors" />;
 }
 
 export const DashboardLayout = ({ children, aside }) => {
@@ -33,8 +35,23 @@ export const DashboardLayout = ({ children, aside }) => {
   const navigate = useNavigate();
   const user = getAuthUser();
   const [opened, { toggle, close }] = useDisclosure();
+  const [workspacePlan, setWorkspacePlan] = useState(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const navItems = allNavItems.filter((item) => item.show());
   const viewer = isViewer();
+
+  useEffect(() => {
+    if (!canManageBilling()) return;
+    apiClient.get(billingEndpoints.PLAN)
+      .then((res) => setWorkspacePlan(res.data?.data?.plan || 'FREE'))
+      .catch(() => setWorkspacePlan('FREE'));
+  }, []);
+
+  useEffect(() => {
+    apiClient.get(platformAdminEndpoints.ME)
+      .then(() => setIsSuperAdmin(true))
+      .catch(() => setIsSuperAdmin(false));
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -51,7 +68,7 @@ export const DashboardLayout = ({ children, aside }) => {
     <AppShell
       className="dashboard-shell"
       header={{ height: { base: 56, sm: 0 } }}
-      navbar={{ width: 232, breakpoint: 'sm', collapsed: { mobile: !opened } }}
+      navbar={{ width: 260, breakpoint: 'sm', collapsed: { mobile: !opened } }}
       padding={{ base: 'sm', sm: 'md' }}
     >
       <AppShell.Header className="dashboard-header" hiddenFrom="sm">
@@ -63,20 +80,30 @@ export const DashboardLayout = ({ children, aside }) => {
               <Text fw={700} size="sm" c="var(--text-primary)">WinkWebHealth</Text>
             </Group>
           </Group>
-          <ThemeToggle />
+          <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+            <WorkspaceSwitcher variant="header" />
+            <ThemeToggle />
+          </Group>
         </Group>
       </AppShell.Header>
 
       <AppShell.Navbar p="md" className="dashboard-sidebar">
         <Stack justify="space-between" h="100%">
           <Stack gap="lg">
-            <Group gap="sm" px={4} visibleFrom="sm">
-              <BrandMark />
-              <Stack gap={0}>
-                <Text fw={700} size="md" c="var(--text-primary)">WinkWebHealth</Text>
-                <Text size="xs" c="var(--text-muted)">Uptime monitoring</Text>
-              </Stack>
-            </Group>
+            <Stack gap="md" px={4} visibleFrom="sm" className="dashboard-sidebar-brand-block">
+              <Group gap="sm" wrap="nowrap" align="flex-start">
+                <BrandMark />
+                <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
+                  <Text fw={700} size="md" c="var(--text-primary)">
+                    WinkWebHealth
+                  </Text>
+                  <Text size="xs" c="var(--text-muted)">Uptime monitoring</Text>
+                </Stack>
+              </Group>
+              <WorkspaceSwitcher variant="sidebar" />
+            </Stack>
+
+            <Divider color="var(--card-border)" opacity={0.6} visibleFrom="sm" />
 
             <Stack gap={4}>
               {navItems.map((item) => {
@@ -108,7 +135,21 @@ export const DashboardLayout = ({ children, aside }) => {
           </Stack>
 
           <Stack gap="sm">
-            {canManageBilling() && (
+            {isSuperAdmin && (
+              <Button
+                component={Link}
+                to="/admin"
+                variant="light"
+                color="dark"
+                fullWidth
+                radius="md"
+                size="sm"
+                leftSection={<IconShieldLock size={16} />}
+              >
+                Admin portal
+              </Button>
+            )}
+            {canManageBilling() && workspacePlan === 'FREE' && (
               <Button
                 component={Link}
                 to="/dashboard/billing"

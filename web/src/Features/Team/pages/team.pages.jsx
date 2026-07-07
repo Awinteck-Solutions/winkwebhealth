@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  Button, Text, Loader, Center, TextInput, Stack, Group, Box, Badge, ActionIcon, Menu, Table, Radio,
+  Button, Text, TextInput, Stack, Group, Box, Badge, ActionIcon, Menu, Table, Radio,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconPlus, IconDots, IconPencil, IconTrash, IconMailForward } from '@tabler/icons-react';
@@ -12,6 +12,7 @@ import { useConfirm } from '../../../components/ConfirmProvider';
 import { teamApi } from '../team.services';
 import { canManageTeam } from '../../../utils/permissions';
 import { Navigate } from 'react-router-dom';
+import { TablePageSkeleton } from '../../../components/PageSkeleton';
 
 const ROLES = [
   { value: 'ADMIN', label: 'Admin' },
@@ -199,7 +200,7 @@ const TeamPage = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <Center h={400}><Loader color="brand" /></Center>
+        <TablePageSkeleton rows={5} columns={4} />
       </DashboardLayout>
     );
   }

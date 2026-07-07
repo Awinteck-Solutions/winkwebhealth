@@ -89,9 +89,13 @@ function PlanCard({
   planId,
   billingPeriod,
   currentPlan,
+  subscription,
   onUpgrade,
   onManage,
+  onCancel,
   signupPath = '/auth/signup',
+  checkoutLoading = false,
+  cancelLoading = false,
 }) {
   const plan = PLANS[planId];
   const isCurrent = currentPlan === planId;
@@ -101,9 +105,31 @@ function PlanCard({
   if (currentPlan != null) {
     if (isCurrent && isPro) {
       action = (
-        <Button variant="light" color="brand" radius="md" fullWidth onClick={onManage}>
-          Manage subscription
-        </Button>
+        <Stack gap="xs">
+          {subscription?.cancelAtPeriodEnd ? (
+            <Text size="sm" c="var(--text-secondary)" ta="center">
+              Cancels at period end
+            </Text>
+          ) : (
+            <>
+              {subscription?.provider === 'STRIPE' && (
+                <Button variant="light" color="brand" radius="md" fullWidth onClick={onManage}>
+                  Manage in Stripe
+                </Button>
+              )}
+              <Button
+                variant="default"
+                color="red"
+                radius="md"
+                fullWidth
+                onClick={onCancel}
+                loading={cancelLoading}
+              >
+                Cancel subscription
+              </Button>
+            </>
+          )}
+        </Stack>
       );
     } else if (isCurrent) {
       action = (
@@ -113,7 +139,14 @@ function PlanCard({
       );
     } else if (isPro) {
       action = (
-        <Button color="brand" radius="md" fullWidth className="pricing-cta-primary" onClick={onUpgrade}>
+        <Button
+          color="brand"
+          radius="md"
+          fullWidth
+          className="pricing-cta-primary"
+          onClick={onUpgrade}
+          loading={checkoutLoading}
+        >
           Upgrade to Pro
         </Button>
       );
@@ -182,12 +215,22 @@ function PlanCard({
 export function PricingPlans({
   variant = 'landing',
   currentPlan,
+  subscription,
   onUpgrade,
   onManage,
+  onCancel,
   showHeader = true,
   signupPath = '/auth/signup',
+  checkoutLoading = false,
+  cancelLoading = false,
 }) {
   const [billingPeriod, setBillingPeriod] = useState('annual');
+
+  const handleUpgrade = () => {
+    if (onUpgrade) {
+      onUpgrade(billingPeriod === 'annual' ? 'yearly' : 'monthly');
+    }
+  };
 
   return (
     <Box className={`pricing-section pricing-section--${variant}`}>
@@ -219,9 +262,13 @@ export function PricingPlans({
           planId="PRO"
           billingPeriod={billingPeriod}
           currentPlan={currentPlan}
-          onUpgrade={onUpgrade}
+          subscription={subscription}
+          onUpgrade={handleUpgrade}
           onManage={onManage}
+          onCancel={onCancel}
           signupPath={signupPath}
+          checkoutLoading={checkoutLoading}
+          cancelLoading={cancelLoading}
         />
       </div>
     </Box>

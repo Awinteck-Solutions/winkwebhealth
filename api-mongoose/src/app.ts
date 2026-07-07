@@ -14,6 +14,8 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger-output.json"); 
 
 
+import { processRenewalInvoices, processExpiredSubscriptions } from "./helpers/billingService";
+
 dotenv.config();
 const app = express();
 app.use(cors())
@@ -43,6 +45,24 @@ const host = process.env.BIND_HOST || "0.0.0.0";
 
 connectToDatabase().then(() => { 
     app.listen(port, host, ()=> console.log(`Server running on ${host}:${port}`))
+
+    const runBillingRenewals = () =>
+      processRenewalInvoices()
+        .then((n) => { if (n > 0) console.log(`Billing: created ${n} renewal invoice(s)`); })
+        .catch((err) => console.error("Billing renewal error:", err));
+
+    const runExpiredSubscriptions = () =>
+      processExpiredSubscriptions()
+        .then((n) => { if (n > 0) console.log(`Billing: expired ${n} cancelled subscription(s)`); })
+        .catch((err) => console.error("Billing expiry error:", err));
+
+    const runBillingJobs = () => {
+      runBillingRenewals();
+      runExpiredSubscriptions();
+    };
+
+    setTimeout(runBillingJobs, 30_000);
+    setInterval(runBillingJobs, 6 * 60 * 60 * 1000);
 }).catch((error) => {
     console.log('error :>> ', error);
 })

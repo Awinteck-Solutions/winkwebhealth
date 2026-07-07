@@ -2,6 +2,7 @@ import { BASEURL } from '../../constants/api.constant';
 
 export const monitorEndpoints = {
   LIST: `${BASEURL}/monitors`,
+  SUMMARIES: `${BASEURL}/monitors/summaries`,
   CREATE: `${BASEURL}/monitors`,
   ONE: (id) => `${BASEURL}/monitors/${id}`,
   CHECKS: (id) => `${BASEURL}/monitors/${id}/checks`,
@@ -27,4 +28,6 @@ export const billingEndpoints = {
   PLAN: `${BASEURL}/billing/plan`,
   CHECKOUT: `${BASEURL}/billing/checkout`,
   PORTAL: `${BASEURL}/billing/portal`,
+  VERIFY: `${BASEURL}/billing/verify`,
+  CANCEL: `${BASEURL}/billing/cancel`,
 };

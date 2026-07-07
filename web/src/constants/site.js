@@ -1,6 +1,9 @@
 export const SITE_NAME = 'WinkWebHealth';
+export const SITE_TAGLINE = 'Uptime monitoring & alerts';
 export const SITE_DOMAIN = 'winkwebhealth.com';
 export const SITE_URL = 'https://winkwebhealth.com';
+export const LOGO_SRC = '/logo.png';
+export const LOGO_SVG_SRC = '/logo.svg';
 export const API_URL = 'https://api.winkwebhealth.com';
 export const SUPPORT_EMAIL = 'support@winkwebhealth.com';
 export const LEGAL_EMAIL = 'legal@winkwebhealth.com';

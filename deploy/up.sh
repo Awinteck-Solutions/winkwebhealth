@@ -13,11 +13,11 @@ if [[ ! -f .env ]]; then
 fi
 
 echo "Building and starting WinkWebHealth stack..."
-docker compose up -d --build
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 echo ""
 echo "Stack status:"
-docker compose ps
+docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
 
 echo ""
 echo "Endpoints (via Apache proxy in production):"

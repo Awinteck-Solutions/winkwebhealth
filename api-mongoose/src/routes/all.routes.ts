@@ -11,6 +11,8 @@ import statusPageRoutes from '../Features/statusPages/route/statusPage.route';
 import billingRoutes from '../Features/billing/route/billing.route';
 import teamMemberRoutes from '../Features/teamMembers/route/teamMember.route';
 import teamInviteRoutes from '../Features/teamMembers/route/teamInvite.route';
+import workspaceRoutes from '../Features/workspaces/route/workspace.route';
+import platformAdminRoutes from '../Features/platformAdmin/route/platformAdmin.route';
 
 const Router = express.Router();
 
@@ -38,8 +40,10 @@ Router.use("/monitors/:monitorId/maintenance", maintenanceWindowRoutes);
 Router.use("/alert-channels", alertChannelRoutes);
 Router.use("/status-pages", statusPageRoutes);
 Router.use("/billing", billingRoutes);
+Router.use("/workspaces", workspaceRoutes);
 Router.use("/team-members", teamMemberRoutes);
 Router.use("/team-invites", teamInviteRoutes);
+Router.use("/platform-admin", platformAdminRoutes);
  
 
 export { Router }

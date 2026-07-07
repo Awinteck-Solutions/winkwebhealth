@@ -34,10 +34,10 @@ chmod +x deploy/*.sh
 ./deploy/check-env.sh
 
 echo "==> Building and starting stack..."
-docker compose up -d --build
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 echo ""
-docker compose ps
+docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
 echo ""
 echo "Next: sudo ./deploy/apache-proxy-ssh.sh"
 echo "  winkwebhealth.com     -> 127.0.0.1:8080"

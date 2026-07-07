@@ -1,0 +1,15 @@
+# VPS / cPanel production overrides (Linux host network for Apache proxy).
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+services:
+  redis:
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  api:
+    network_mode: host
+    ports: !reset []
+    networks: !reset []
+    environment:
+      BIND_HOST: 127.0.0.1
+      REDIS_URL: redis://127.0.0.1:6379

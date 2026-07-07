@@ -1,13 +1,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
-  Button, Text, Loader, Center, Stack, TextInput, PasswordInput, Box, Group, Alert,
+  Button, Text, Stack, TextInput, PasswordInput, Box, Group, Alert, Center,
 } from '@mantine/core';
-import { IconBolt, IconCheck } from '@tabler/icons-react';
+import { IconCheck } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
-import { BRAND } from '../../../constants/colors';
+import { BrandLogo } from '../../../components/BrandLogo';
 import { teamInviteApi } from '../team.services';
 import { saveAuthSession, getAuthUser, logout } from '../../../utils/auth';
+import { FormPageSkeleton } from '../../../components/PageSkeleton';
 import { ThemeToggle } from '../../../components/ThemeToggle';
 
 const ROLE_LABELS = { ADMIN: 'Admin', MEMBER: 'Member', VIEWER: 'Viewer' };
@@ -102,20 +103,11 @@ export default function InviteAcceptPage() {
           <ThemeToggle />
         </Box>
         <Box className="auth-card invite-card" p="xl" w="100%" maw={440}>
-          <Group gap="sm" mb="xl">
-            <Box
-              style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: BRAND.gradient,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              <IconBolt size={18} color="#fff" stroke={2.5} />
-            </Box>
-            <Text fw={700} size="lg" c="var(--text-primary)">WinkWebHealth</Text>
+          <Group gap="sm" mb="xl" justify="center">
+            <BrandLogo size={32} showName nameSize={20} linkTo="/" />
           </Group>
 
-          {loading && <Center py="xl"><Loader color="brand" /></Center>}
+          {loading && <FormPageSkeleton />}
 
           {!loading && error && (
             <Stack gap="md">

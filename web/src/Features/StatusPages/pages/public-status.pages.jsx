@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Text, Loader, Center, Card, Group, Badge, Stack } from '@mantine/core';
+import { Text, Card, Group, Badge, Stack, Skeleton, Center } from '@mantine/core';
 import axios from 'axios';
 import { statusPageEndpoints } from '../../Monitors/monitors.endpoints';
 import dayjs from 'dayjs';
@@ -41,7 +41,18 @@ const PublicStatusPage = () => {
       .finally(() => setLoading(false));
   }, [slug]);
 
-  if (loading) return <Center h={300}><Loader /></Center>;
+  if (loading) {
+    return (
+      <div style={{ maxWidth: 800, margin: '40px auto', padding: '0 20px' }}>
+        <Skeleton height={32} width="50%" mb="lg" radius="sm" />
+        <Stack gap="md">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} height={100} radius="md" />
+          ))}
+        </Stack>
+      </div>
+    );
+  }
   if (!data) return <Center h={300}><Text>Status page not found</Text></Center>;
 
   const openIncidents = data.monitors.flatMap((m) =>

@@ -58,19 +58,19 @@ function healthMessage(up, down, total) {
   return 'Monitoring in progress';
 }
 
-export function MonitorsSidebar({ monitors, plan = 'FREE', planLimit = 5, preview = false }) {
+export function MonitorsSidebar({ monitors, plan = 'FREE', planLimit = 5, preview = false, summaryLoading = false }) {
   const up = monitors.filter((m) => m.currentStatus === 'UP').length;
   const down = monitors.filter((m) => m.currentStatus === 'DOWN').length;
   const paused = monitors.filter((m) => m.currentStatus === 'PAUSED' || m.currentStatus === 'PENDING').length;
   const total = monitors.length;
 
-  const overallUptime = total
+  const overallUptime = total && !summaryLoading
     ? Math.round(monitors.reduce((sum, m) => sum + (m.uptimePercent ?? 100), 0) / total)
-    : 100;
+    : summaryLoading ? null : 100;
 
   const healthPct = total ? Math.round((up / total) * 100) : 100;
   const ringColor = down > 0 ? STATUS.down : STATUS.up;
-  const uptimeTone = overallUptime >= 99 ? 'up' : overallUptime >= 95 ? 'warn' : 'down';
+  const uptimeTone = overallUptime == null ? 'neutral' : overallUptime >= 99 ? 'up' : overallUptime >= 95 ? 'warn' : 'down';
   const planUsage = planLimit ? Math.min(100, Math.round((total / planLimit) * 100)) : 0;
 
   return (
@@ -149,11 +149,11 @@ export function MonitorsSidebar({ monitors, plan = 'FREE', planLimit = 5, previe
         </Group>
 
         <div className={`monitor-uptime-hero tone-${uptimeTone}`}>
-          <AnimatedValue value={`${overallUptime}%`} className="monitor-uptime-hero-value" />
+          <AnimatedValue value={overallUptime == null ? '…' : `${overallUptime}%`} className="monitor-uptime-hero-value" />
           <Text size="xs" className="monitor-uptime-hero-label">Overall uptime</Text>
         </div>
 
-        <UptimeStrip uptime={overallUptime} />
+        <UptimeStrip uptime={overallUptime ?? 100} />
 
         <div className="monitor-stat-grid monitor-stat-grid--two">
           <StatTile

@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import TeamMember from "../Features/teamMembers/schema/teamMember.schema";
-import { getUserId, toObjectId } from "../helpers/requestUser";
+import { getUserId } from "../helpers/requestUser";
+import { userCanAccessWorkspace, resolveWorkspaceRole } from "../helpers/workspaceService";
 
 export async function attachWorkspace(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -10,18 +10,17 @@ export async function attachWorkspace(req: Request, res: Response, next: NextFun
       return;
     }
 
-    const membership = await TeamMember.findOne({
-      memberUserId: toObjectId(userId),
-      status: "ACTIVE",
-    }).sort({ updatedAt: -1 });
+    const headerWorkspace = req.headers["x-workspace-id"] as string | undefined;
+    const workspaceOwnerId = headerWorkspace?.trim() || userId;
 
-    if (membership) {
-      req.workspaceOwnerId = String(membership.userId);
-      req.teamRole = membership.role;
-    } else {
-      req.workspaceOwnerId = userId;
-      req.teamRole = "OWNER";
+    const allowed = await userCanAccessWorkspace(userId, workspaceOwnerId);
+    if (!allowed) {
+      res.status(403).json({ success: false, message: "You do not have access to this workspace" });
+      return;
     }
+
+    req.workspaceOwnerId = workspaceOwnerId;
+    req.teamRole = await resolveWorkspaceRole(userId, workspaceOwnerId);
 
     next();
   } catch {

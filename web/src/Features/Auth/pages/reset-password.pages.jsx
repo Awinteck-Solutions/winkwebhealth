@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Button, PasswordInput, Text, Stack, Box, Group, Anchor, Loader, Center, Alert } from '@mantine/core';
+import { Button, PasswordInput, Text, Stack, Box, Group, Anchor, Alert } from '@mantine/core';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { authPost } from '../services/auth.service';
 import { notifications } from '@mantine/notifications';
-import { IconBolt, IconCheck } from '@tabler/icons-react';
-import { BRAND } from '../../../constants/colors';
+import { IconCheck } from '@tabler/icons-react';
+import { BrandLogo } from '../../../components/BrandLogo';
 import { ThemeToggle } from '../../../components/ThemeToggle';
+import { FormPageSkeleton } from '../../../components/PageSkeleton';
 
 const ResetPasswordPage = () => {
   const { token } = useParams();
@@ -65,13 +66,10 @@ const ResetPasswordPage = () => {
           <ThemeToggle />
         </Box>
         <Group gap="sm" justify="center" mb="xl">
-          <Box style={{ width: 32, height: 32, borderRadius: 8, background: BRAND.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <IconBolt size={18} color="#fff" stroke={2.5} />
-          </Box>
-          <Text size="xl" fw={700} c="var(--text-primary)">WinkWebHealth</Text>
+          <BrandLogo size={32} showName nameSize={20} linkTo="/" />
         </Group>
 
-        {loading && <Center py="xl"><Loader color="brand" /></Center>}
+        {loading && <FormPageSkeleton />}
 
         {!loading && error && (
           <Stack gap="md">

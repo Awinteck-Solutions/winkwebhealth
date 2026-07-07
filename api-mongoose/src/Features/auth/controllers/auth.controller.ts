@@ -30,14 +30,13 @@ export class AuthController {
         lastname: user.lastname,
       });
 
+      const profile = await buildAuthUserPayload(user);
+
       return res.status(201).json({
         status: true,
         message: "New User registered",
         user: {
-          id: String(user._id),
-          email: user.email,
-          firstname: user.firstname,
-          lastname: user.lastname,
+          ...profile,
           token,
         },
       });

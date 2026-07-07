@@ -1,22 +1,13 @@
-import { Box, Button, Container, Group, Stack, Text, Title, Anchor } from '@mantine/core';
+import { Box, Button, Container, Group, Stack, Text, Anchor } from '@mantine/core';
 import { Link } from 'react-router-dom';
-import { IconHeartbeat } from '@tabler/icons-react';
 import { ThemeToggle } from './ThemeToggle';
+import { BrandLogo } from './BrandLogo';
 import { SITE_NAME } from '../constants/site';
 import '../Features/Marketing/marketing.css';
 
 export function MarketingLogo({ size = 32, linkTo = '/' }) {
   return (
-    <Anchor component={Link} to={linkTo} underline="never" className="marketing-logo-link">
-      <Group gap="sm" wrap="nowrap">
-        <Box className="landing-logo" style={{ width: size, height: size }}>
-          <IconHeartbeat size={size * 0.56} color="#fff" stroke={2.5} />
-        </Box>
-        <Title order={3} c="var(--text-primary)" fw={700} style={{ fontSize: size * 0.65 }}>
-          {SITE_NAME}
-        </Title>
-      </Group>
-    </Anchor>
+    <BrandLogo size={size} showName linkTo={linkTo} nameSize={size * 0.65} />
   );
 }
 
@@ -58,29 +49,20 @@ export function MarketingLayout({ children }) {
             <Group gap="xl" align="flex-start">
               <Stack gap="xs">
                 <Text size="xs" fw={600} c="var(--text-secondary)" tt="uppercase">Product</Text>
-                <Anchor component={Link} to="/#features" className="landing-footer-link">Features</Anchor>
-                <Anchor component={Link} to="/#pricing" className="landing-footer-link">Pricing</Anchor>
-                <Anchor component={Link} to="/auth/signup" className="landing-footer-link">Sign up</Anchor>
+                <Anchor component={Link} to="/#features" size="sm" c="var(--text-muted)">Features</Anchor>
+                <Anchor component={Link} to="/#pricing" size="sm" c="var(--text-muted)">Pricing</Anchor>
+                <Anchor component={Link} to="/help" size="sm" c="var(--text-muted)">Help center</Anchor>
               </Stack>
               <Stack gap="xs">
-                <Text size="xs" fw={600} c="var(--text-secondary)" tt="uppercase">Support</Text>
-                <Anchor component={Link} to="/help" className="landing-footer-link">Help center</Anchor>
-                <Anchor component={Link} to="/contact" className="landing-footer-link">Contact us</Anchor>
-              </Stack>
-              <Stack gap="xs">
-                <Text size="xs" fw={600} c="var(--text-secondary)" tt="uppercase">Legal</Text>
-                <Anchor component={Link} to="/legal" className="landing-footer-link">Terms & privacy</Anchor>
-                <Anchor component={Link} to="/security" className="landing-footer-link">Security & compliance</Anchor>
-              </Stack>
-              <Stack gap="xs">
-                <Text size="xs" fw={600} c="var(--text-secondary)" tt="uppercase">Account</Text>
-                <Anchor component={Link} to="/auth/login" className="landing-footer-link">Log in</Anchor>
-                <Anchor component={Link} to="/auth/signup" className="landing-footer-link">Get started</Anchor>
+                <Text size="xs" fw={600} c="var(--text-secondary)" tt="uppercase">Company</Text>
+                <Anchor component={Link} to="/contact" size="sm" c="var(--text-muted)">Contact</Anchor>
+                <Anchor component={Link} to="/legal" size="sm" c="var(--text-muted)">Legal</Anchor>
+                <Anchor component={Link} to="/security" size="sm" c="var(--text-muted)">Security</Anchor>
               </Stack>
             </Group>
           </Group>
           <Text size="xs" c="var(--text-muted)" mt="xl" ta="center">
-            © {new Date().getFullYear()} {SITE_NAME}. Downtime happens — get notified.
+            &copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
           </Text>
         </Container>
       </Box>

@@ -6,8 +6,7 @@ import { notifications } from '@mantine/notifications';
 import axios from 'axios';
 import { BASEURL } from '../../../constants/api.constant';
 import { saveAuthSession } from '../../../utils/auth';
-import { IconBolt } from '@tabler/icons-react';
-import { BRAND } from '../../../constants/colors';
+import { BrandLogo } from '../../../components/BrandLogo';
 import { ThemeToggle } from '../../../components/ThemeToggle';
 
 const SignupPage = () => {
@@ -39,10 +38,7 @@ const SignupPage = () => {
           <ThemeToggle />
         </Box>
         <Group gap="sm" justify="center" mb="xl">
-          <Box style={{ width: 32, height: 32, borderRadius: 8, background: BRAND.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <IconBolt size={18} color="#fff" stroke={2.5} />
-          </Box>
-          <Text size="xl" fw={700} c="var(--text-primary)">WinkWebHealth</Text>
+          <BrandLogo size={32} showName nameSize={20} linkTo="/" />
         </Group>
         <Text size="sm" c="var(--text-secondary)" mb="xl" ta="center">
           Start monitoring for free — 3 monitors included, no credit card required.

@@ -95,6 +95,85 @@
   flex-shrink: 0;
 }
 
+.dashboard-sidebar-brand-block {
+  width: 100%;
+  min-width: 0;
+}
+
+.workspace-switcher {
+  width: 100%;
+  min-width: 0;
+}
+
+.workspace-switcher-trigger {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.workspace-switcher-trigger:not(:disabled):hover {
+  background: var(--card-bg-hover);
+  border-color: var(--card-border-hover);
+}
+
+.workspace-switcher-trigger:not(:disabled)[data-expanded],
+.workspace-switcher-trigger:not(:disabled):focus-visible {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-glow);
+}
+
+.workspace-switcher-trigger.is-static {
+  cursor: default;
+}
+
+.workspace-switcher-trigger--header {
+  max-width: 200px;
+  padding: 8px 10px;
+}
+
+.workspace-switcher-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--nav-active-bg);
+  color: var(--brand);
+}
+
+.workspace-switcher-name,
+.workspace-switcher-owner,
+.workspace-switcher-menu-name,
+.workspace-switcher-menu-owner {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+.workspace-switcher-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.workspace-switcher-dropdown .mantine-Menu-item {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  height: auto;
+  align-items: flex-start;
+}
+
+.workspace-switcher-item.is-selected {
+  background: var(--nav-active-bg);
+}
+
 .viewer-banner {
   border: 1px solid rgba(13, 148, 136, 0.25);
 }

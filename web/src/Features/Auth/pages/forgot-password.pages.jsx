@@ -5,8 +5,8 @@ import * as Yup from 'yup';
 import { Link } from 'react-router-dom';
 import { authPost } from '../services/auth.service';
 import { notifications } from '@mantine/notifications';
-import { IconBolt, IconArrowLeft } from '@tabler/icons-react';
-import { BRAND } from '../../../constants/colors';
+import { IconArrowLeft } from '@tabler/icons-react';
+import { BrandLogo } from '../../../components/BrandLogo';
 import { ThemeToggle } from '../../../components/ThemeToggle';
 
 const ForgotPasswordPage = () => {
@@ -47,10 +47,7 @@ const ForgotPasswordPage = () => {
           <ThemeToggle />
         </Box>
         <Group gap="sm" justify="center" mb="xl">
-          <Box style={{ width: 32, height: 32, borderRadius: 8, background: BRAND.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <IconBolt size={18} color="#fff" stroke={2.5} />
-          </Box>
-          <Text size="xl" fw={700} c="var(--text-primary)">WinkWebHealth</Text>
+          <BrandLogo size={32} showName nameSize={20} linkTo="/" />
         </Group>
         <Text size="lg" fw={700} c="var(--text-primary)" mb="xs" ta="center">Forgot password</Text>
         <Text size="sm" c="var(--text-secondary)" mb="xl" ta="center" lh={1.6}>

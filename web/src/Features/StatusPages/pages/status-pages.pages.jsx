@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Text, Loader, Center, TextInput, MultiSelect, Stack, Switch, Group, Badge } from '@mantine/core';
+import { Button, Text, TextInput, MultiSelect, Stack, Switch, Group, Badge } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Link } from 'react-router-dom';
 import { IconPlus, IconExternalLink } from '@tabler/icons-react';
@@ -10,6 +10,7 @@ import { AppModal } from '../../../components/AppModal';
 import { canWrite } from '../../../utils/permissions';
 import apiClient from '../../../utils/apiClient';
 import { statusPageEndpoints, monitorEndpoints } from '../../Monitors/monitors.endpoints';
+import { TablePageSkeleton } from '../../../components/PageSkeleton';
 
 const StatusPagesPage = () => {
   const [pages, setPages] = useState([]);
@@ -44,7 +45,7 @@ const StatusPagesPage = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <Center h={400}><Loader color="brand" /></Center>
+        <TablePageSkeleton rows={4} columns={3} />
       </DashboardLayout>
     );
   }

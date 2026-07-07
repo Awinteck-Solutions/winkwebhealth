@@ -1,6 +1,6 @@
 import * as nodemailer from "nodemailer";
 import type { Transporter } from "nodemailer";
-import { passwordResetEmailHtml, teamInviteEmailHtml } from "./emailTemplates";
+import { passwordResetEmailHtml, teamInviteEmailHtml, invoiceDueEmailHtml, paymentReceiptEmailHtml } from "./emailTemplates";
 
 function getSmtpConfigError(): string | null {
   const host = process.env.SMTP_HOST?.trim();
@@ -79,5 +79,35 @@ export async function sendPasswordResetEmail(to: string, name: string, resetToke
     to,
     "[WinkWebHealth] Reset your password",
     passwordResetEmailHtml(name, resetUrl),
+  );
+}
+
+export async function sendInvoiceDueEmail(params: {
+  to: string;
+  name: string;
+  invoiceNumber: string;
+  amountLabel: string;
+  dueDate: string;
+  paymentUrl: string;
+}): Promise<void> {
+  await sendHtmlEmail(
+    params.to,
+    `[WinkWebHealth] Invoice ${params.invoiceNumber} — payment due`,
+    invoiceDueEmailHtml(params),
+  );
+}
+
+export async function sendPaymentReceiptEmail(params: {
+  to: string;
+  name: string;
+  invoiceNumber: string;
+  amountLabel: string;
+  periodEnd: string;
+  receiptUrl: string;
+}): Promise<void> {
+  await sendHtmlEmail(
+    params.to,
+    `[WinkWebHealth] Receipt ${params.invoiceNumber} — payment confirmed`,
+    paymentReceiptEmailHtml(params),
   );
 }

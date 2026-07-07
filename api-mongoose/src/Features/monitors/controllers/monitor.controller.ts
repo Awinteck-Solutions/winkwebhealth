@@ -7,6 +7,8 @@ import { getWorkspaceOwnerId, toObjectId, isViewer } from "../../../helpers/requ
 import { validateMonitorLimits } from "../../../helpers/planLimits";
 import { sendAlert, getAlertSendErrorMessage } from "../../../helpers/alertSender";
 import { normalizeMonitorHostFields } from "../../../helpers/monitorInput";
+import { buildMonitorListSummaries, summariesToRecord } from "../../../helpers/monitorListSummary";
+import { buildMonitorPeriodStats, resolveCheckQuery } from "../../../helpers/monitorStats";
 
 export class MonitorController {
   static async list(req: Request, res: Response) {
@@ -14,8 +16,23 @@ export class MonitorController {
       const userId = getWorkspaceOwnerId(req);
       if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
 
-      const monitors = await Monitor.find({ userId: toObjectId(userId) }).sort({ createdAt: -1 });
+      const monitors = await Monitor.find({ userId: toObjectId(userId) }).sort({ createdAt: -1 }).lean();
       return res.status(200).json({ success: true, data: monitors });
+    } catch {
+      return res.status(500).json({ success: false, message: "System error" });
+    }
+  }
+
+  static async listSummaries(req: Request, res: Response) {
+    try {
+      const userId = getWorkspaceOwnerId(req);
+      if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+      const monitors = await Monitor.find({ userId: toObjectId(userId) }).select("_id").lean();
+      const monitorIds = monitors.map((m) => m._id);
+      const summaries = await buildMonitorListSummaries(monitorIds);
+
+      return res.status(200).json({ success: true, data: summariesToRecord(summaries) });
     } catch {
       return res.status(500).json({ success: false, message: "System error" });
     }
@@ -184,15 +201,16 @@ export class MonitorController {
       const monitor = await Monitor.findOne({ _id: req.params.id, userId: toObjectId(userId) });
       if (!monitor) return res.status(404).json({ success: false, message: "Monitor not found" });
 
-      const days = parseInt(req.query.days as string) || 7;
-      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      const { limit, since } = resolveCheckQuery(req.query.days, req.query.limit, req.query.hours);
 
       const checks = await Check.find({
         monitorId: monitor._id,
         checkedAt: { $gte: since },
       })
         .sort({ checkedAt: -1 })
-        .limit(5000);
+        .limit(limit)
+        .select("status responseTimeMs statusCode errorMessage checkedAt")
+        .lean();
 
       return res.status(200).json({ success: true, data: checks });
     } catch {
@@ -208,26 +226,12 @@ export class MonitorController {
       const monitor = await Monitor.findOne({ _id: req.params.id, userId: toObjectId(userId) });
       if (!monitor) return res.status(404).json({ success: false, message: "Monitor not found" });
 
-      const periods = [1, 7, 30];
-      const stats: Record<string, { uptimePercent: number; totalChecks: number }> = {};
-
-      for (const days of periods) {
-        const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-        const checks = await Check.find({
-          monitorId: monitor._id,
-          checkedAt: { $gte: since },
-        });
-        const total = checks.length;
-        const up = checks.filter((c) => c.status === "UP").length;
-        stats[`${days}d`] = {
-          uptimePercent: total > 0 ? Math.round((up / total) * 10000) / 100 : 100,
-          totalChecks: total,
-        };
-      }
+      const stats = await buildMonitorPeriodStats(monitor._id, [1, 7, 30]);
 
       const incidents = await Incident.find({ monitorId: monitor._id })
         .sort({ startedAt: -1 })
-        .limit(50);
+        .limit(50)
+        .lean();
 
       return res.status(200).json({ success: true, data: { stats, incidents } });
     } catch {

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
-  Button, Text, Loader, Center, Group, Alert, TextInput, Select, Stack, Box, Title,
+  Button, Text, Group, Alert, TextInput, Select, Stack, Box, Title,
 } from '@mantine/core';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
@@ -15,6 +15,7 @@ import { canWrite } from '../../../utils/permissions';
 import apiClient from '../../../utils/apiClient';
 import { billingEndpoints } from '../monitors.endpoints';
 import { PLAN_LIMITS } from '../../../constants/pricing';
+import { TablePageSkeleton } from '../../../components/PageSkeleton';
 
 const MonitorsListPage = () => {
   const confirm = useConfirm();
@@ -23,6 +24,7 @@ const MonitorsListPage = () => {
   const [monitors, setMonitors] = useState([]);
   const [checksMap, setChecksMap] = useState({});
   const [loading, setLoading] = useState(true);
+  const [summaryLoading, setSummaryLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('down-first');
@@ -30,42 +32,44 @@ const MonitorsListPage = () => {
   const [plan, setPlan] = useState('FREE');
   const [planLimit, setPlanLimit] = useState(PLAN_LIMITS.FREE.maxMonitors);
 
+  const applySummaries = useCallback((summaries) => {
+    setMonitors((prev) => prev.map((m) => {
+      const s = summaries[m._id];
+      if (!s) return m;
+      return { ...m, uptimePercent: s.uptimePercent, recentChecks: s.recentChecks };
+    }));
+    setChecksMap((prev) => {
+      const next = { ...prev };
+      Object.entries(summaries).forEach(([id, s]) => {
+        next[id] = s.recentChecks || [];
+      });
+      return next;
+    });
+  }, []);
+
   const loadMonitors = useCallback(() => {
     setLoading(true);
+    setSummaryLoading(true);
     setError(null);
-    monitorsApi.list()
-      .then(async (res) => {
-        const list = res.data.data || [];
-        const enriched = await Promise.all(
-          list.map(async (m) => {
-            try {
-              const stats = await monitorsApi.stats(m._id);
-              return { ...m, uptimePercent: stats.data.data?.stats?.['1d']?.uptimePercent ?? null };
-            } catch {
-              return m;
-            }
-          })
-        );
-        setMonitors(enriched);
 
-        const checksEntries = await Promise.all(
-          list.map(async (m) => {
-            try {
-              const c = await monitorsApi.checks(m._id, 1);
-              return [m._id, c.data.data || []];
-            } catch {
-              return [m._id, []];
-            }
-          })
-        );
-        setChecksMap(Object.fromEntries(checksEntries));
+    monitorsApi.list()
+      .then((res) => {
+        const list = res.data.data || [];
+        setMonitors(list);
+        setChecksMap(Object.fromEntries(list.map((m) => [m._id, []])));
       })
       .catch((err) => {
         setMonitors([]);
+        setChecksMap({});
         setError(err.response?.data?.message || 'Failed to load monitors. Try logging in again.');
       })
       .finally(() => setLoading(false));
-  }, []);
+
+    monitorsApi.summaries()
+      .then((res) => applySummaries(res.data.data || {}))
+      .catch(() => {})
+      .finally(() => setSummaryLoading(false));
+  }, [applySummaries]);
 
   useEffect(() => { loadMonitors(); }, [loadMonitors]);
 
@@ -141,12 +145,12 @@ const MonitorsListPage = () => {
   const allPending = monitors.length > 0 && monitors.every((m) => m.currentStatus === 'PENDING');
   const writable = canWrite();
 
-  const sidebar = <MonitorsSidebar monitors={monitors} plan={plan} planLimit={planLimit} />;
+  const sidebar = <MonitorsSidebar monitors={monitors} plan={plan} planLimit={planLimit} summaryLoading={summaryLoading} />;
 
-  if (loading) {
+  if (loading && monitors.length === 0) {
     return (
       <DashboardLayout aside={sidebar}>
-        <Center h={400}><Loader color="brand" /></Center>
+        <TablePageSkeleton rows={5} columns={3} />
       </DashboardLayout>
     );
   }
@@ -225,6 +229,7 @@ const MonitorsListPage = () => {
               key={m._id}
               monitor={m}
               checks={checksMap[m._id] || []}
+              summaryLoading={summaryLoading}
               onPause={handlePause}
               onDelete={handleDelete}
             />

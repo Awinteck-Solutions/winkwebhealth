@@ -1,7 +1,7 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
-  Button, Text, Loader, Center, Group, SimpleGrid, TextInput, Table, Stack, Box, Menu, ActionIcon, Anchor,
+  Button, Text, Group, SimpleGrid, TextInput, Table, Stack, Box, Menu, ActionIcon, Anchor, Skeleton, Center, SegmentedControl,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
@@ -17,6 +17,7 @@ import { MonitorDetailSidebar } from '../../../components/MonitorDetailSidebar';
 import { UptimeBarMini } from '../../../components/UptimeBarMini';
 import { AppModal } from '../../../components/AppModal';
 import { useConfirm } from '../../../components/ConfirmProvider';
+import { DetailPageSkeleton } from '../../../components/PageSkeleton';
 import { MonitorFormModal } from '../MonitorFormModal';
 import { monitorsApi } from '../monitors.services';
 import { monitorTarget } from '../monitorForm.utils';
@@ -40,6 +41,26 @@ function statusColor(status) {
   return { UP: STATUS.up, DOWN: STATUS.down, PAUSED: STATUS.paused, PENDING: STATUS.pending }[status] || STATUS.pending;
 }
 
+const CHART_RANGES = [
+  { value: '30m', label: '30 minutes', shortLabel: '30m', hours: 0.5 },
+  { value: '1h', label: '1 hour', shortLabel: '1h', hours: 1 },
+  { value: '24h', label: '24 hours', shortLabel: '24h', hours: 24 },
+  { value: '7d', label: '7 days', shortLabel: '7d', hours: 168 },
+  { value: '30d', label: '30 days', shortLabel: '30d', hours: 720 },
+];
+
+function formatChartAxisTime(checkedAt, hours) {
+  const d = dayjs(checkedAt);
+  if (hours <= 1) return d.format('HH:mm');
+  if (hours <= 24) return d.format('HH:mm');
+  if (hours <= 168) return d.format('ddd HH:mm');
+  return d.format('MMM D');
+}
+
+function formatChartTooltipTime(checkedAt) {
+  return dayjs(checkedAt).format('MMM D, YYYY HH:mm');
+}
+
 const MonitorDetailPage = () => {
   const confirm = useConfirm();
   const { id } = useParams();
@@ -48,30 +69,62 @@ const MonitorDetailPage = () => {
   const [monitor, setMonitor] = useState(null);
   const [stats, setStats] = useState(null);
   const [checks24h, setChecks24h] = useState([]);
+  const [chartRangeKey, setChartRangeKey] = useState('24h');
+  const [chartChecks, setChartChecks] = useState([]);
+  const [chartLoading, setChartLoading] = useState(true);
   const [maintenance, setMaintenance] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [metricsLoading, setMetricsLoading] = useState(true);
   const [testingAlerts, setTestingAlerts] = useState(false);
   const [opened, { open, close }] = useDisclosure(false);
   const [editOpen, setEditOpen] = useState(false);
   const [maintForm, setMaintForm] = useState({ startsAt: '', endsAt: '', note: '' });
   const writable = canWrite();
 
-  const load = () => {
-    setLoading(true);
-    Promise.all([
-      monitorsApi.get(id),
+  const loadChartChecks = useCallback((rangeKey) => {
+    const range = CHART_RANGES.find((r) => r.value === rangeKey) || CHART_RANGES[2];
+    setChartLoading(true);
+    return monitorsApi.checks(id, { hours: range.hours })
+      .then((res) => setChartChecks(res.data.data || []))
+      .catch(() => setChartChecks([]))
+      .finally(() => setChartLoading(false));
+  }, [id]);
+
+  const loadMetrics = useCallback(() => {
+    setMetricsLoading(true);
+    return Promise.all([
       monitorsApi.stats(id),
       monitorsApi.checks(id, 1),
       monitorsApi.maintenance.list(id),
-    ]).then(([m, s, c24, mw]) => {
-      setMonitor(m.data.data);
+    ]).then(([s, c24, mw]) => {
       setStats(s.data.data);
       setChecks24h(c24.data.data || []);
       setMaintenance(mw.data.data || []);
-    }).finally(() => setLoading(false));
-  };
+    }).finally(() => setMetricsLoading(false));
+  }, [id]);
 
-  useEffect(() => { load(); }, [id]);
+  const refreshAll = useCallback(() => {
+    setLoading(true);
+    monitorsApi.get(id)
+      .then((m) => setMonitor(m.data.data))
+      .catch(() => setMonitor(null))
+      .finally(() => setLoading(false));
+    loadMetrics();
+    loadChartChecks(chartRangeKey);
+  }, [id, chartRangeKey, loadMetrics, loadChartChecks]);
+
+  useEffect(() => {
+    setLoading(true);
+    monitorsApi.get(id)
+      .then((m) => setMonitor(m.data.data))
+      .catch(() => setMonitor(null))
+      .finally(() => setLoading(false));
+    loadMetrics();
+  }, [id, loadMetrics]);
+
+  useEffect(() => {
+    loadChartChecks(chartRangeKey);
+  }, [chartRangeKey, loadChartChecks]);
 
   useEffect(() => {
     if (searchParams.get('edit') === '1' && writable) {
@@ -80,22 +133,29 @@ const MonitorDetailPage = () => {
     }
   }, [searchParams, setSearchParams, writable]);
 
+  const chartRange = CHART_RANGES.find((r) => r.value === chartRangeKey) || CHART_RANGES[2];
+
   const chartData = useMemo(() =>
-    checks24h.slice().reverse().map((c) => ({
-      time: dayjs(c.checkedAt).format('HH:mm'),
-      ms: c.responseTimeMs,
-    })),
-  [checks24h]);
+    chartChecks
+      .filter((c) => c.status === 'UP')
+      .slice()
+      .reverse()
+      .map((c) => ({
+        time: formatChartAxisTime(c.checkedAt, chartRange.hours),
+        fullTime: formatChartTooltipTime(c.checkedAt),
+        ms: c.responseTimeMs,
+      })),
+  [chartChecks, chartRange.hours]);
 
   const responseStats = useMemo(() => {
-    const times = checks24h.filter((c) => c.status === 'UP').map((c) => c.responseTimeMs);
+    const times = chartChecks.filter((c) => c.status === 'UP').map((c) => c.responseTimeMs);
     if (!times.length) return { avg: null, min: null, max: null };
     return {
       avg: Math.round(times.reduce((a, b) => a + b, 0) / times.length),
       min: Math.min(...times),
       max: Math.max(...times),
     };
-  }, [checks24h]);
+  }, [chartChecks]);
 
   const uptime24h = useMemo(() => {
     if (!checks24h.length) return null;
@@ -125,7 +185,7 @@ const MonitorDetailPage = () => {
       message: monitor.name,
       color: 'brand',
     });
-    load();
+    refreshAll();
   };
 
   const handleDelete = async () => {
@@ -144,7 +204,7 @@ const MonitorDetailPage = () => {
     await monitorsApi.maintenance.create(id, maintForm);
     notifications.show({ title: 'Scheduled', message: 'Maintenance window added', color: 'brand' });
     close();
-    load();
+    refreshAll();
   };
 
   const handleTestAlerts = async () => {
@@ -188,7 +248,7 @@ const MonitorDetailPage = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <Center h={400}><Loader color="brand" /></Center>
+        <DetailPageSkeleton />
       </DashboardLayout>
     );
   }
@@ -275,7 +335,7 @@ const MonitorDetailPage = () => {
           </Menu>
           </>
           )}
-          <Button variant="default" color="gray" radius="md" leftSection={<IconRefresh size={16} />} onClick={load}>
+          <Button variant="default" color="gray" radius="md" leftSection={<IconRefresh size={16} />} onClick={refreshAll}>
             Refresh
           </Button>
         </Group>
@@ -308,17 +368,32 @@ const MonitorDetailPage = () => {
         <Box className="detail-stat-card detail-stat-card-uptime">
           <Group justify="space-between" align="flex-start" mb="sm">
             <Text className="detail-stat-label" mb={0}>Last 24 hours.</Text>
-            <Text fw={700} className="detail-uptime-pct" style={{ color: uptimeMetricColor(uptime24h) }}>
-              {uptime24h !== null ? `${uptime24h}%` : '—'}
-            </Text>
+            {metricsLoading ? (
+              <Skeleton height={24} width={56} radius="sm" />
+            ) : (
+              <Text fw={700} className="detail-uptime-pct" style={{ color: uptimeMetricColor(uptime24h) }}>
+                {uptime24h !== null ? `${uptime24h}%` : '—'}
+              </Text>
+            )}
           </Group>
           <Box className="uptime-bar-full">
-            <UptimeBarMini checks={checks24h} bars={36} size="full" palette="detail" />
+            {metricsLoading ? (
+              <Skeleton height={44} radius="md" />
+            ) : (
+              <UptimeBarMini checks={checks24h} bars={36} size="full" palette="detail" />
+            )}
           </Box>
         </Box>
       </SimpleGrid>
 
       {/* Uptime period cards */}
+      {metricsLoading ? (
+        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md" mb="md">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} height={88} radius="md" />
+          ))}
+        </SimpleGrid>
+      ) : (
       <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md" mb="md">
         {[
           { key: '7d', label: 'Last 7 days.' },
@@ -340,19 +415,42 @@ const MonitorDetailPage = () => {
           );
         })}
       </SimpleGrid>
+      )}
 
       {/* Response time chart */}
       <Box className="stats-card" mb="md">
-        <Text fw={600} c="var(--text-primary)" mb={4}>Response time.</Text>
-        <Text size="xs" c="var(--text-secondary)" mb="lg">Last 24 hours · milliseconds</Text>
-        {chartData.length > 0 ? (
+        <Group justify="space-between" align="flex-start" mb="lg" wrap="wrap" gap="sm">
+          <div>
+            <Text fw={600} c="var(--text-primary)" mb={4}>Response time</Text>
+            <Text size="xs" c="var(--text-secondary)">
+              {chartRange.label} · milliseconds · successful checks only
+            </Text>
+          </div>
+          <SegmentedControl
+            value={chartRangeKey}
+            onChange={setChartRangeKey}
+            data={CHART_RANGES.map((r) => ({ value: r.value, label: r.shortLabel }))}
+            size="xs"
+            radius="md"
+          />
+        </Group>
+        {chartLoading ? (
+          <Skeleton height={220} radius="md" />
+        ) : chartData.length > 0 ? (
           <>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={chartData}>
-                <XAxis dataKey="time" stroke="var(--chart-grid)" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} interval="preserveStartEnd" />
+                <XAxis
+                  dataKey="time"
+                  stroke="var(--chart-grid)"
+                  tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                  interval="preserveStartEnd"
+                  minTickGap={chartRange.hours > 168 ? 24 : chartRange.hours <= 1 ? 4 : 8}
+                />
                 <YAxis stroke="var(--chart-grid)" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} unit="ms" />
                 <Tooltip
                   contentStyle={{ background: 'var(--chart-tooltip-bg)', border: '1px solid var(--chart-tooltip-border)', borderRadius: 8, color: 'var(--text-primary)' }}
+                  labelFormatter={(_, payload) => payload?.[0]?.payload?.fullTime || ''}
                   formatter={(v) => [`${v} ms`, 'Response']}
                 />
                 <Line type="monotone" dataKey="ms" stroke={METRIC.chart} dot={false} strokeWidth={2} />
@@ -373,7 +471,11 @@ const MonitorDetailPage = () => {
           </>
         ) : (
           <Center h={160}>
-            <Text c="var(--text-secondary)" size="sm">No check data yet. Ensure the worker is running.</Text>
+            <Text c="var(--text-secondary)" size="sm" ta="center">
+              {chartChecks.length > 0
+                ? `No successful checks in the last ${chartRange.label.toLowerCase()}.`
+                : 'No check data yet. Ensure the worker is running.'}
+            </Text>
           </Center>
         )}
       </Box>
@@ -381,7 +483,13 @@ const MonitorDetailPage = () => {
       {/* Incidents */}
       <Box className="stats-card">
         <Text fw={600} c="var(--text-primary)" mb="sm">Incidents.</Text>
-        {(stats?.incidents || []).length === 0 ? (
+        {metricsLoading ? (
+          <Stack gap="xs">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} height={36} radius="sm" />
+            ))}
+          </Stack>
+        ) : (stats?.incidents || []).length === 0 ? (
           <Text c="var(--text-secondary)" size="sm">No incidents recorded — looking good!</Text>
         ) : (
           <Table highlightOnHover withTableBorder={false}>
@@ -434,7 +542,7 @@ const MonitorDetailPage = () => {
         opened={editOpen}
         onClose={() => setEditOpen(false)}
         monitorId={id}
-        onSuccess={() => load()}
+        onSuccess={() => refreshAll()}
       />
       </div>
     </DashboardLayout>

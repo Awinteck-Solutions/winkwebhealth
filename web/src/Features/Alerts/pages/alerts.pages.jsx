@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Button, Text, Loader, Center, TextInput, Stack, Group, Box, Switch,
+  Button, Text, TextInput, Stack, Group, Box, Switch,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
@@ -15,6 +15,7 @@ import { BRAND } from '../../../constants/colors';
 import { canWrite } from '../../../utils/permissions';
 import { PageHeader, FEATURE_DESCRIPTIONS } from '../../../components/PageHeader';
 import { alertsApi } from '../alerts.services';
+import { TablePageSkeleton } from '../../../components/PageSkeleton';
 
 const CATEGORIES = [
   { id: 'all', label: 'All' },
@@ -216,7 +217,7 @@ const AlertsPage = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <Center h={400}><Loader color="brand" /></Center>
+        <TablePageSkeleton rows={6} columns={4} />
       </DashboardLayout>
     );
   }

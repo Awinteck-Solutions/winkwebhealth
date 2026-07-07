@@ -56,7 +56,7 @@ EOF
 
 if ! curl -sf --max-time 3 "$API_UPSTREAM" >/dev/null 2>&1; then
   echo "WARNING: API not reachable at $API_UPSTREAM yet." >&2
-  echo "  Ensure .env has PORT=${API_PORT} and run: docker compose up -d --build api" >&2
+  echo "  Ensure .env has PORT=${API_PORT} and run: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build api" >&2
 fi
 
 if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce)" == "Enforcing" ]]; then

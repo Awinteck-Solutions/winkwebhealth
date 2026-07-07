@@ -11,6 +11,7 @@ export function saveAuthSession(payload) {
       lastname: payload.lastname,
       workspaceOwnerId: payload.workspaceOwnerId,
       teamRole: payload.teamRole,
+      workspaces: payload.workspaces || [],
     })
   );
 }

@@ -72,7 +72,7 @@ chmod +x deploy/up.sh
 Or manually:
 
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
 Verify:
@@ -121,7 +121,7 @@ Use the live `STRIPE_WEBHOOK_SECRET` in `.env`.
 ```bash
 cd /opt/winkwebhealth
 git pull
-docker compose up -d --build
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
 To rebuild only the web app after changing `VITE_API_URL`:
@@ -131,7 +131,23 @@ docker compose build web --no-cache
 docker compose up -d web
 ```
 
-## 8. Local development (Redis only in Docker)
+## 8. Local development
+
+**Full stack in Docker (Mac / Linux):**
+
+```bash
+docker compose up -d --build
+```
+
+Redis stays on the internal Docker network only — no host port conflict with other Redis containers.
+
+**VPS production** uses host networking for the API (Apache proxy). Always include the prod override:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+**Redis only** (run api/worker/web with `npm run dev` on the host):
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up redis -d
@@ -139,6 +155,8 @@ cd api-mongoose && npm run dev    # http://localhost:4545
 cd worker && npm run dev
 cd web && npm run dev             # http://localhost:8080
 ```
+
+Host Redis for dev is on **6380** if another service already uses 6379.
 
 ## Troubleshooting
 
