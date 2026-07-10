@@ -20,12 +20,17 @@ const ResetPasswordPage = () => {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
+    if (!token) {
+      setError('Invalid or expired reset link');
+      setLoading(false);
+      return;
+    }
     authPost('VALIDATE-RESET', { token })
       .then((res) => {
         if (res.status && res.data?.success) {
           setEmail(res.data.data?.email || '');
         } else {
-          setError(res.message || 'Invalid or expired reset link');
+          setError(res.message || res.data?.message || 'Invalid or expired reset link');
         }
       })
       .catch(() => setError('Invalid or expired reset link'))
@@ -50,7 +55,11 @@ const ResetPasswordPage = () => {
         notifications.show({ title: 'Password updated', message: 'You can now sign in', color: 'brand' });
         setTimeout(() => navigate('/auth/login'), 2000);
       } else {
-        notifications.show({ title: 'Error', message: res.message || res.data?.message || 'Could not reset password', color: 'red' });
+        notifications.show({
+          title: 'Error',
+          message: res.message || res.data?.message || 'Could not reset password',
+          color: 'red',
+        });
       }
     } catch {
       notifications.show({ title: 'Error', message: 'Could not reset password', color: 'red' });

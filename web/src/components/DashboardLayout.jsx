@@ -72,38 +72,41 @@ export const DashboardLayout = ({ children, aside }) => {
       padding={{ base: 'sm', sm: 'md' }}
     >
       <AppShell.Header className="dashboard-header" hiddenFrom="sm">
-        <Group h="100%" px="md" justify="space-between">
-          <Group gap="sm">
-            <Burger opened={opened} onClick={toggle} size="sm" color="var(--text-primary)" aria-label="Toggle navigation" />
-            <Group gap="xs">
-              <BrandMark size={24} />
-              <Text fw={700} size="sm" c="var(--text-primary)">WinkWebHealth</Text>
-            </Group>
-          </Group>
+        <Group h="100%" px="sm" justify="space-between" wrap="nowrap" gap="xs">
           <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
-            <WorkspaceSwitcher variant="header" />
-            <ThemeToggle />
+            <Burger opened={opened} onClick={toggle} size="sm" color="var(--text-primary)" aria-label="Toggle navigation" />
+            <BrandMark size={24} />
+            <Text fw={700} size="sm" c="var(--text-primary)" lineClamp={1}>
+              WinkWebHealth
+            </Text>
           </Group>
+          <ThemeToggle />
         </Group>
       </AppShell.Header>
 
       <AppShell.Navbar p="md" className="dashboard-sidebar">
         <Stack justify="space-between" h="100%">
           <Stack gap="lg">
-            <Stack gap="md" px={4} visibleFrom="sm" className="dashboard-sidebar-brand-block">
-              <Group gap="sm" wrap="nowrap" align="flex-start">
-                <BrandMark />
-                <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
-                  <Text fw={700} size="md" c="var(--text-primary)">
-                    WinkWebHealth
-                  </Text>
-                  <Text size="xs" c="var(--text-muted)">Uptime monitoring</Text>
-                </Stack>
-              </Group>
-              <WorkspaceSwitcher variant="sidebar" />
+            {/* Desktop brand */}
+            <Group gap="sm" wrap="nowrap" align="flex-start" visibleFrom="sm" px={4}>
+              <BrandMark />
+              <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
+                <Text fw={700} size="md" c="var(--text-primary)">
+                  WinkWebHealth
+                </Text>
+                <Text size="xs" c="var(--text-muted)">Uptime monitoring</Text>
+              </Stack>
+            </Group>
+
+            {/* Workspace switcher — nav drawer (mobile) + sidebar (desktop) */}
+            <Stack gap={6} className="dashboard-workspace-block">
+              <Text size="xs" fw={600} c="var(--text-muted)" tt="uppercase" px={4}>
+                Workspace
+              </Text>
+              <WorkspaceSwitcher />
             </Stack>
 
-            <Divider color="var(--card-border)" opacity={0.6} visibleFrom="sm" />
+            <Divider color="var(--card-border)" opacity={0.6} />
 
             <Stack gap={4}>
               {navItems.map((item) => {

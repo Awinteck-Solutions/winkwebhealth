@@ -32,7 +32,22 @@ export class StatusPageController {
         return res.status(400).json({ success: false, message: validation.message });
       }
 
-      const { slug, title, isPublic = true, monitors = [] } = req.body;
+      const { isPublic = true, monitors = [] } = req.body;
+      const title = String(req.body.title || "").trim();
+      const slug = String(req.body.slug || "")
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 64);
+
+      if (!title) {
+        return res.status(400).json({ success: false, message: "Title is required" });
+      }
+      if (!slug) {
+        return res.status(400).json({ success: false, message: "Slug is required" });
+      }
+
       const page = await StatusPage.create({ userId, slug, title, isPublic, monitors });
       return res.status(201).json({ success: true, data: page });
     } catch (error: unknown) {
@@ -55,14 +70,31 @@ export class StatusPageController {
       const page = await StatusPage.findOne({ _id: req.params.id, userId });
       if (!page) return res.status(404).json({ success: false, message: "Status page not found" });
 
-      if (req.body.title !== undefined) page.title = req.body.title;
-      if (req.body.slug !== undefined) page.slug = req.body.slug;
+      if (req.body.title !== undefined) {
+        const title = String(req.body.title).trim();
+        if (!title) return res.status(400).json({ success: false, message: "Title is required" });
+        page.title = title;
+      }
+      if (req.body.slug !== undefined) {
+        const slug = String(req.body.slug)
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 64);
+        if (!slug) return res.status(400).json({ success: false, message: "Slug is required" });
+        page.slug = slug;
+      }
       if (req.body.isPublic !== undefined) page.isPublic = req.body.isPublic;
       if (req.body.monitors !== undefined) page.monitors = req.body.monitors;
 
       await page.save();
       return res.status(200).json({ success: true, data: page });
-    } catch {
+    } catch (error: unknown) {
+      const err = error as { code?: number };
+      if (err.code === 11000) {
+        return res.status(400).json({ success: false, message: "Slug already taken" });
+      }
       return res.status(500).json({ success: false, message: "System error" });
     }
   }

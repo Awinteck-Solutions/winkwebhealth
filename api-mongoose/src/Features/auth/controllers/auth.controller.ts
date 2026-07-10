@@ -8,10 +8,37 @@ import { buildAuthUserPayload } from "../../../helpers/authUserPayload";
 
 const RESET_HOURS = 1;
 
+function normalizeEmail(email: unknown): string {
+  return String(email || "").trim().toLowerCase();
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Case-insensitive email lookup (handles legacy mixed-case accounts). */
+async function findUserByEmail(email: string) {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
+  return User.findOne({
+    email: { $regex: new RegExp(`^${escapeRegex(normalized)}$`, "i") },
+  });
+}
+
 export class AuthController {
   static async signup(req: Request, res: Response) {
     try {
-      const { firstname, lastname, email, password } = req.body;
+      const { firstname, lastname, password } = req.body;
+      const email = normalizeEmail(req.body.email);
+      if (!email || !password) {
+        return res.status(400).json({ status: false, message: "Email and password required" });
+      }
+
+      const existing = await findUserByEmail(email);
+      if (existing) {
+        return res.status(400).json({ status: false, message: "An account with this email already exists" });
+      }
+
       const otp = String(getRandomInt(999, 9999));
       const encryptedPassword = await encrypt.encryptpass(password);
 
@@ -51,12 +78,13 @@ export class AuthController {
 
   static async login(req: Request, res: Response) {
     try {
-      const { email, password } = req.body;
+      const { password } = req.body;
+      const email = normalizeEmail(req.body.email);
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password required" });
       }
 
-      const user = await User.findOne({ email });
+      const user = await findUserByEmail(email);
       if (!user?.password) {
         return res.status(404).json({ status: false, message: "Invalid email or password" });
       }
@@ -64,6 +92,12 @@ export class AuthController {
       const valid = encrypt.comparepassword(user.password, password);
       if (!valid) {
         return res.status(404).json({ status: false, message: "Invalid email or password" });
+      }
+
+      // Normalize stored email if it was mixed-case
+      if (user.email !== email) {
+        user.email = email;
+        await user.save();
       }
 
       const token = encrypt.generateToken({
@@ -91,19 +125,19 @@ export class AuthController {
 
   static async forgotPassword(req: Request, res: Response) {
     try {
-      const { email } = req.body;
-      if (!email?.trim()) {
+      const email = normalizeEmail(req.body.email);
+      if (!email) {
         return res.status(400).json({ success: false, message: "Email is required" });
       }
 
-      const normalizedEmail = email.trim().toLowerCase();
-      const user = await User.findOne({ email: normalizedEmail });
+      const user = await findUserByEmail(email);
       const genericMessage = "If an account exists for that email, a reset link has been sent.";
 
       if (user) {
         const resetToken = randomBytes(32).toString("hex");
         user.resetPasswordToken = resetToken;
         user.resetPasswordExpires = new Date(Date.now() + RESET_HOURS * 60 * 60 * 1000);
+        if (user.email !== email) user.email = email;
         await user.save();
 
         try {
@@ -113,6 +147,7 @@ export class AuthController {
           user.resetPasswordToken = null;
           user.resetPasswordExpires = null;
           await user.save();
+          console.error("[forgotPassword] mail failed:", mailErr);
           return res.status(502).json({
             success: false,
             message: getMailErrorMessage(mailErr),
@@ -123,14 +158,19 @@ export class AuthController {
       return res.status(200).json({ success: true, message: genericMessage });
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ message: "Internal server error" });
+      return res.status(500).json({ success: false, message: "Internal server error" });
     }
   }
 
   static async validateResetToken(req: Request, res: Response) {
     try {
+      const token = String(req.params.token || "").trim();
+      if (!token) {
+        return res.status(400).json({ success: false, message: "Invalid or expired reset link" });
+      }
+
       const user = await User.findOne({
-        resetPasswordToken: req.params.token,
+        resetPasswordToken: token,
         resetPasswordExpires: { $gt: new Date() },
       }).select("email firstname");
 
@@ -149,7 +189,8 @@ export class AuthController {
 
   static async resetPassword(req: Request, res: Response) {
     try {
-      const { token, password } = req.body;
+      const { password } = req.body;
+      const token = String(req.body.token || "").trim();
       if (!token) {
         return res.status(400).json({ success: false, message: "Reset token is required" });
       }
@@ -177,7 +218,7 @@ export class AuthController {
       });
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ message: "Internal server error" });
+      return res.status(500).json({ success: false, message: "Internal server error" });
     }
   }
 }

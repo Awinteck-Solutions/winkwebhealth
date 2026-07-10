@@ -1,4 +1,4 @@
-import { Button, TextInput, Text, Stack, Box, Group, Anchor } from '@mantine/core';
+import { Button, TextInput, Text, Stack, Box, Group, Anchor, Alert } from '@mantine/core';
 import { useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -12,6 +12,7 @@ import { ThemeToggle } from '../../../components/ThemeToggle';
 const ForgotPasswordPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState(null);
 
   const formik = useFormik({
     initialValues: { email: '' },
@@ -20,9 +21,12 @@ const ForgotPasswordPage = () => {
     }),
     onSubmit: async (values) => {
       setSubmitting(true);
+      setError(null);
       try {
-        const response = await authPost('FORGOT-PASSWORD', values);
-        if (response.status) {
+        const response = await authPost('FORGOT-PASSWORD', {
+          email: values.email.trim().toLowerCase(),
+        });
+        if (response.status && response.data?.success !== false) {
           setSent(true);
           notifications.show({
             title: 'Check your email',
@@ -30,10 +34,14 @@ const ForgotPasswordPage = () => {
             color: 'brand',
           });
         } else {
-          notifications.show({ title: 'Error', message: response.message, color: 'red' });
+          const msg = response.message || response.data?.message || 'Could not send reset email';
+          setError(msg);
+          notifications.show({ title: 'Error', message: msg, color: 'red' });
         }
       } catch {
-        notifications.show({ title: 'Error', message: 'Could not send reset email', color: 'red' });
+        const msg = 'Could not send reset email. Please try again.';
+        setError(msg);
+        notifications.show({ title: 'Error', message: msg, color: 'red' });
       } finally {
         setSubmitting(false);
       }
@@ -55,23 +63,49 @@ const ForgotPasswordPage = () => {
             ? 'If an account exists for that email, we sent a link to reset your password. The link expires in 1 hour.'
             : 'Enter your email and we will send you a link to reset your password.'}
         </Text>
+        {error && (
+          <Alert color="red" variant="light" mb="md" title="Could not send email">
+            {error}
+          </Alert>
+        )}
         {!sent ? (
           <form onSubmit={formik.handleSubmit}>
             <Stack gap="sm">
-              <TextInput label="Email" type="email" {...formik.getFieldProps('email')} />
+              <TextInput
+                label="Email"
+                type="email"
+                autoComplete="email"
+                error={formik.touched.email && formik.errors.email}
+                {...formik.getFieldProps('email')}
+              />
               <Button type="submit" fullWidth loading={submitting} color="brand" radius="md" mt="sm">
                 Send reset link
               </Button>
             </Stack>
           </form>
         ) : (
-          <Button component={Link} to="/auth/login" fullWidth color="brand" radius="md">
-            Back to sign in
-          </Button>
+          <Stack gap="sm">
+            <Alert color="teal" variant="light" title="Email sent">
+              Check your inbox (and spam folder) for a message from WinkWebHealth. The link expires in 1 hour.
+            </Alert>
+            <Button component={Link} to="/auth/login" fullWidth color="brand" radius="md">
+              Back to sign in
+            </Button>
+            <Button
+              variant="subtle"
+              color="gray"
+              fullWidth
+              onClick={() => { setSent(false); setError(null); }}
+            >
+              Try a different email
+            </Button>
+          </Stack>
         )}
-        <Anchor component={Link} to="/auth/login" size="sm" c="brand" mt="xl" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          <IconArrowLeft size={14} /> Back to sign in
-        </Anchor>
+        {!sent && (
+          <Anchor component={Link} to="/auth/login" size="sm" c="brand" mt="xl" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <IconArrowLeft size={14} /> Back to sign in
+          </Anchor>
+        )}
       </Box>
     </Box>
   );

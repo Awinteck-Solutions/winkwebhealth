@@ -100,9 +100,15 @@
   min-width: 0;
 }
 
+.dashboard-workspace-block {
+  width: 100%;
+  min-width: 0;
+}
+
 .workspace-switcher {
   width: 100%;
   min-width: 0;
+  max-width: 100%;
 }
 
 .workspace-switcher-trigger {
@@ -132,9 +138,12 @@
   cursor: default;
 }
 
-.workspace-switcher-trigger--header {
-  max-width: 200px;
-  padding: 8px 10px;
+.workspace-switcher-trigger-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
 }
 
 .workspace-switcher-icon {
@@ -149,13 +158,22 @@
   color: var(--brand);
 }
 
+.workspace-switcher-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .workspace-switcher-name,
 .workspace-switcher-owner,
 .workspace-switcher-menu-name,
 .workspace-switcher-menu-owner {
-  white-space: normal;
-  word-break: break-word;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   line-height: 1.35;
+  max-width: 100%;
 }
 
 .workspace-switcher-chevron {
@@ -163,11 +181,42 @@
   color: var(--text-muted);
 }
 
+.workspace-switcher-dropdown {
+  max-width: min(300px, calc(100vw - 24px)) !important;
+}
+
 .workspace-switcher-dropdown .mantine-Menu-item {
   padding-top: 10px;
   padding-bottom: 10px;
   height: auto;
   align-items: flex-start;
+}
+
+.workspace-switcher-dropdown .mantine-Menu-itemLabel {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.workspace-switcher-menu-text {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.workspace-switcher-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.workspace-switcher-menu-row .workspace-switcher-menu-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.workspace-switcher-menu-row .mantine-Badge-root {
+  flex-shrink: 0;
 }
 
 .workspace-switcher-item.is-selected {
